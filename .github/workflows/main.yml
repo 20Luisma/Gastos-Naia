@@ -12,6 +12,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Install PHP & Composer dependencies
+        run: |
+          sudo apt-get install -y php php-cli unzip
+          curl -sS https://getcomposer.org/installer | php
+          php composer.phar install --no-dev --optimize-autoloader
+
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
 
@@ -27,13 +33,4 @@ jobs:
           --exclude '.env' \
           --exclude 'config.php' \
           --exclude 'credentials' \
-          --exclude 'vendor' \
           ./ ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:/home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia/
-
-      - name: Run composer install on server
-        env:
-          SSHPASS: ${{ secrets.DEPLOY_SSH_PASS }}
-        run: |
-          sshpass -e ssh -p ${{ secrets.DEPLOY_SSH_PORT }} -o StrictHostKeyChecking=no \
-          ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
-          "cd /home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia && composer install --no-dev --optimize-autoloader"
