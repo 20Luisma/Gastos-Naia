@@ -18,11 +18,11 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
         $this->drive = new Drive($client);
     }
 
-    private function getOrCreateFolder(string $parentFolderId, string $folderName): string
+    private function getOrCreateFolder(string $parentFolderId, int $month, string $monthName, int $year): string
     {
+        // 1. Obtener todas las subcarpetas del año
         $query = sprintf(
-            "name = '%s' and '%s' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-            str_replace("'", "\\'", $folderName),
+            "'%s' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
             $parentFolderId
         );
 
@@ -32,12 +32,20 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
             'fields' => 'files(id, name)',
         ]);
 
-        if (count($results->getFiles()) > 0) {
-            return $results->getFiles()[0]->getId();
+        // 2. Buscar coincidencias flexibles usando regex Local
+        // Acepta: "1) Recibos Enero 2024", "1)Recibos Enero 2024", " 1) recibos enero 2024" etc.
+        $regex = "/^\s*{$month}\)\s*Recibos\s+{$monthName}\s+{$year}\s*$/ui";
+
+        foreach ($results->getFiles() as $folder) {
+            if (preg_match($regex, $folder->getName())) {
+                return $folder->getId(); // Encontrada!
+            }
         }
 
+        // 3. Si no existe, crear con nombre canónico
+        $canonicalName = sprintf("%d) Recibos %s %d", $month, $monthName, $year);
         $fileMetadata = new DriveFile([
-            'name' => $folderName,
+            'name' => $canonicalName,
             'parents' => [$parentFolderId],
             'mimeType' => 'application/vnd.google-apps.folder'
         ]);
@@ -53,12 +61,9 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
         }
 
         $yearFolderId = $this->config['drive_folders'][$year];
-
         $monthName = $this->config['month_labels'][$month] ?? 'Unknown';
-        $monthFolderName = sprintf("%d) Recibos %s %d", $month, $monthName, $year);
-        $monthFolderId = $this->getOrCreateFolder($yearFolderId, $monthFolderName);
 
-        return $monthFolderId;
+        return $this->getOrCreateFolder($yearFolderId, $month, $monthName, $year);
     }
 
     public function uploadReceipt(int $year, int $month, string $localFilePath, string $originalName, string $mimeType): array
@@ -135,6 +140,7 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
             }
             return $files;
         } catch (\Exception $e) {
+            file_put_contents(__DIR__ . '/drive_error.log', $e->getMessage() . "\n", FILE_APPEND);
             return [];
         }
     }
