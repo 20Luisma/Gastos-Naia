@@ -381,7 +381,12 @@
             body += `\nUn saludo.\n--\nGenerado por Gastos Naia App.`;
 
             const encodedBody = encodeURIComponent(body);
-            window.location.href = `mailto:?subject=${subject}&body=${encodedBody}`;
+            // Mejor compatibilidad móvil para mailto creando un enlace clickeable temporalmente
+            const link = document.createElement('a');
+            link.href = `mailto:?subject=${subject}&body=${encodedBody}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
     }
 
@@ -409,15 +414,32 @@
 
             const half = (total / 2).toFixed(2);
 
+            // Fallback para HTTP donde navigator.clipboard a menudo falla en móvil
+            const fallbackCopy = (text) => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed'; // Evitar scroll
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    showToast(`Cantidad copiada: ${text}€`, 'success');
+                } catch (err) {
+                    showToast(`Cantidad a pagar: ${text}€`, 'success');
+                }
+                document.body.removeChild(ta);
+            };
+
             // Copy to clipboard
-            if (navigator.clipboard) {
+            if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(half).then(() => {
                     showToast(`Cantidad copiada: ${half}€`, 'success');
                 }).catch(() => {
-                    showToast(`Cantidad a pagar: ${half}€`, 'success');
+                    fallbackCopy(half);
                 });
             } else {
-                showToast(`Cantidad a pagar: ${half}€`, 'success');
+                fallbackCopy(half);
             }
         });
     }
