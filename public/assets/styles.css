@@ -262,15 +262,8 @@ body::before {
     cursor: pointer;
     transition: border-color var(--transition);
     min-width: 120px;
-}
 
-.select-input option {
-    background-color: #ffffff;
-    color: #111111;
-}
-
-/* Fallback for webkit browsers to ensure standard UI behaves and coloring is forced */
-select.select-input {
+    /* Safari & Atlas WebView Force */
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -280,6 +273,36 @@ select.select-input {
     background-position: right 1rem center;
     background-size: 1em;
     padding-right: 2.5rem;
+}
+
+.select-input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}
+
+/* Forced reset for options in WebViews */
+.select-input option {
+    background-color: #0c0c18 !important;
+    /* Force dark background */
+    color: #ffffff !important;
+    /* Force white text */
+    -webkit-appearance: none !important;
+}
+
+/* Specific WebKit hack for iOS and Atlas browser */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    select.select-input {
+        color: #f0f0f5;
+        background-color: #1e1e2d;
+    }
+
+    /* When WebKit native dropdown opens, iOS sets its own colors. 
+       We force the option color to black so it's readable on iOS's native white wheel. 
+       This specifically targets the options inside the picker wheel. */
+    select.select-input option {
+        color: #000000;
+        background-color: #ffffff;
+    }
 }
 
 /* ── Dashboard Grid ── */
