@@ -264,9 +264,22 @@ body::before {
     min-width: 120px;
 }
 
-.select-input:focus {
-    outline: none;
-    border-color: var(--border-focus);
+.select-input option {
+    background-color: #1e1e2d;
+    color: #f0f0f5;
+}
+
+/* Fallback for webkit browsers to ensure standard UI behaves and coloring is forced */
+select.select-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #1e1e2d;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f0f0f5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
 }
 
 /* ── Dashboard Grid ── */
