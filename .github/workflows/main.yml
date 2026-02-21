@@ -1,0 +1,30 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Deploy via rsync
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT }} -H ${{ secrets.DEPLOY_SSH_HOST }} >> ~/.ssh/known_hosts
+          rsync -avz --delete -e "ssh -p ${{ secrets.DEPLOY_SSH_PORT }}" \
+          --exclude '.git' \
+          --exclude '.github' \
+          --exclude '.env' \
+          --exclude 'config.php' \
+          --exclude 'credentials' \
+          ./ ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:/home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia/
