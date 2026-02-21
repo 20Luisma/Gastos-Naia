@@ -1,0 +1,2 @@
+# Permitir descarga de archivos pero no listado de directorio
+Options -Indexes

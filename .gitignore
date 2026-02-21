@@ -1,0 +1,14 @@
+# Dependencias de PHP
+vendor/
+composer.lock
+
+# Archivos de entorno y secretos
+.env
+credentials/
+
+# Archivos subidos por el usuario localmente
+uploads/
+
+# Archivos basura del sistema operativo
+.DS_Store
+Thumbs.db
