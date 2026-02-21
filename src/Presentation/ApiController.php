@@ -208,7 +208,9 @@ class ApiController
 
                     // 1. Verificamos si ya existe
                     if (isset($this->config['spreadsheets'][$newYear]) && !empty($this->config['spreadsheets'][$newYear])) {
-                        throw new \Exception("El año $newYear ya existe en la configuración.");
+                        http_response_code(400); // Bad Request
+                        $this->jsonResponse(['error' => "Este año ya está creado. No se puede volver a generar."]);
+                        return;
                     }
 
                     $templateId = $this->config['template_spreadsheet_id'] ?? '';
@@ -226,11 +228,16 @@ class ApiController
                     $drive = new Drive($client);
 
                     $newSheetName = "Gastos Naia $newYear - Hojas de Cálculo";
-                    $file = new \Google\Service\Drive\DriveFile();
-                    $file->setName($newSheetName);
+                    $fileMetadata = new \Google\Service\Drive\DriveFile([
+                        'name' => $newSheetName,
+                    ]);
+
+                    $optParams = [
+                        'supportsAllDrives' => true,
+                    ];
 
                     try {
-                        $copiedFile = $drive->files->copy($templateId, $file);
+                        $copiedFile = $drive->files->copy($templateId, $fileMetadata, $optParams);
                         $newSpreadsheetId = $copiedFile->getId();
                     } catch (\Exception $e) {
                         throw new \Exception("Error al clonar la Plantilla de Sheets: " . $e->getMessage());
@@ -243,8 +250,12 @@ class ApiController
                         'mimeType' => 'application/vnd.google-apps.folder'
                     ]);
 
+                    $optParams = [
+                        'supportsAllDrives' => true,
+                    ];
+
                     try {
-                        $newFolder = $drive->files->create($folderMetadata, ['fields' => 'id']);
+                        $newFolder = $drive->files->create($folderMetadata, $optParams);
                         $newFolderId = $newFolder->getId();
                     } catch (\Exception $e) {
                         throw new \Exception("Error al crear carpeta principal 'Renta $newYear': " . $e->getMessage());

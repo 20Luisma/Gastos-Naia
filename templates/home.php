@@ -7,12 +7,26 @@
     <meta name="description" content="Gastos Naia — Gestión y visualización de gastos">
     <title>Gastos Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=1.2">
+    <link rel="stylesheet" href="public/assets/styles.css?v=1.3">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 
 <body>
+    <!-- DEBUG SCRIPT: TEMPORAL - will be removed after fixing -->
+    <div id="js-debug"
+        style="position:fixed;bottom:0;left:0;right:0;background:#ff0055;color:#fff;padding:8px 12px;font-size:12px;z-index:99999;display:none;max-height:200px;overflow-y:auto;white-space:pre-wrap;">
+    </div>
+    <script>
+        window.addEventListener('error', function (e) {
+            var d = document.getElementById('js-debug');
+            if (d) { d.style.display = 'block'; d.textContent += 'ERROR: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')\n'; }
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+            var d = document.getElementById('js-debug');
+            if (d) { d.style.display = 'block'; d.textContent += 'PROMISE ERROR: ' + e.reason + '\n'; }
+        });
+    </script>
 
     <!-- ── Header (WordPress Style TopBar) ── -->
     <header class="header">
@@ -331,7 +345,7 @@
         </footer>
     </div>
 
-    <script src="assets/app.js"></script>
+    <script src="public/assets/app.js?v=1.7"></script>
 </body>
 
 </html>

@@ -768,9 +768,7 @@
                 e.preventDefault();
                 const yearToCreate = $inputNewYear.value;
 
-                if (!confirm(`¿Estás seguro? Esto clonará la plantilla de Sheets y creará la carpeta Renta ${yearToCreate} en Google Drive.`)) {
-                    return;
-                }
+
 
                 $formNewYear.style.display = 'none';
                 $newYearLoading.style.display = 'flex';
@@ -783,8 +781,18 @@
                         body: JSON.stringify({ year: yearToCreate })
                     });
 
-                    const data = await res.json();
+                    let data;
+                    try {
+                        data = await res.json();
+                    } catch (e) {
+                        throw new Error("Respuesta no válida del servidor.");
+                    }
+
                     $newYearLoading.style.display = 'none';
+
+                    if (!res.ok) {
+                        throw new Error(data.error || data.message || `Error HTTP: ${res.status}`);
+                    }
 
                     if (data.status === 'success') {
                         if (data.config_saved === false) {
@@ -806,7 +814,7 @@
                             setTimeout(() => window.location.reload(), 3000);
                         }
                     } else {
-                        throw new Error(data.message || 'Error desconocido.');
+                        throw new Error(data.error || data.message || 'Error desconocido.');
                     }
 
                 } catch (err) {
