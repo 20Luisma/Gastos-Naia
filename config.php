@@ -73,6 +73,7 @@ return [
         2025 => '1otkT6ikYD0sMUMOngMD3TrNmxoenMoOOg-YcQaXJM-M',
         2026 => '1J_Y63fBRbN25W3EvRGzSO2skKwa5vgJPbZSAU7NUngU',
         // 2027 => 'SPREADSHEET_ID_2027',
+        2027 => '1plQrxX9m2M0_wb-ZlYoXBFYaCt1yfWkEBTe32lTEcg0',
     ],
 
     // ── Uploads locales (Legacy) ──
@@ -89,5 +90,6 @@ return [
         2024 => '131jsC1IWbTLR2c3uVlQLYISDr9hEwzqo',
         2025 => '1gmfqyoQr7Fx-J1Rz76Lo0NGq_qTHt9Uj',
         2026 => '1CNY-mYwrG1HCgwSQde_P8sOVt6nWum6e',
+        2027 => '1yELmpwAnnbLFbabAzzbFOh-3ZZ339tph',
     ],
 ];
