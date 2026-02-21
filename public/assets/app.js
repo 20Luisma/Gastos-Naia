@@ -121,7 +121,7 @@
     function switchView(name) {
         clearError();
         Object.entries(views).forEach(([key, el]) => {
-            el.style.display = key === name ? 'block' : 'none';
+            if (el) el.style.display = key === name ? 'block' : 'none';
         });
         document.querySelectorAll('.nav__btn').forEach(btn => {
             btn.classList.toggle('nav__btn--active', btn.dataset.view === name);
