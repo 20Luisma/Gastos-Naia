@@ -15,8 +15,13 @@ foreach ($config['spreadsheets'] as $year => $id) {
     } catch (\Exception $e) {
         $msg = $e->getMessage();
         $decoded = json_decode($msg, true);
-        if ($decoded && isset($decoded['error'])) {
-            echo "  -> ERROR: " . $decoded['error']['message'] . " (" . $decoded['error']['status'] . ")\n";
+        if (is_array($decoded) && isset($decoded['error'])) {
+            $err = $decoded['error'];
+            if (is_array($err) && isset($err['message'])) {
+                echo "  -> ERROR: " . $err['message'] . "\n";
+            } else {
+                echo "  -> ERROR: " . (is_string($err) ? $err : json_encode($err)) . "\n";
+            }
         } else {
             echo "  -> ERROR: " . $msg . "\n";
         }
