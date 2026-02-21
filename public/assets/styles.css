@@ -265,8 +265,8 @@ body::before {
 }
 
 .select-input option {
-    background-color: #1e1e2d;
-    color: #f0f0f5;
+    background-color: #ffffff;
+    color: #111111;
 }
 
 /* Fallback for webkit browsers to ensure standard UI behaves and coloring is forced */
