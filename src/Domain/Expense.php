@@ -2,7 +2,7 @@
 
 namespace GastosNaia\Domain;
 
-class Expense
+class Expense implements \JsonSerializable
 {
     private ?int $row;
     private string $date;

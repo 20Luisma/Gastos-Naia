@@ -49,9 +49,9 @@ class ApiController
 
     private function createGoogleClient(): Client
     {
-        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
-        $clientSecret = $_ENV['GOOGLE_CLIENT_SECRET'] ?? '';
-        $refreshToken = $_ENV['GOOGLE_REFRESH_TOKEN'] ?? '';
+        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? $_SERVER['GOOGLE_CLIENT_ID'] ?? getenv('GOOGLE_CLIENT_ID') ?? '';
+        $clientSecret = $_ENV['GOOGLE_CLIENT_SECRET'] ?? $_SERVER['GOOGLE_CLIENT_SECRET'] ?? getenv('GOOGLE_CLIENT_SECRET') ?? '';
+        $refreshToken = $_ENV['GOOGLE_REFRESH_TOKEN'] ?? $_SERVER['GOOGLE_REFRESH_TOKEN'] ?? getenv('GOOGLE_REFRESH_TOKEN') ?? '';
 
         if (empty($clientId) || empty($clientSecret) || empty($refreshToken)) {
             // Check if service account is available

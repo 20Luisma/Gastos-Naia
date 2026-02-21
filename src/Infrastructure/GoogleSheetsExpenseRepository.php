@@ -327,7 +327,11 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
         return $results;
     }
 
-    private function parseMoneyValue(mixed $value): ?float
+    /**
+     * @param mixed $value
+     * @return float|null
+     */
+    private function parseMoneyValue($value): ?float
     {
         if (!is_string($value))
             return null;

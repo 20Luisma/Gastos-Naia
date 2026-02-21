@@ -28,8 +28,15 @@ $action = $_GET['action'] ?? null;
 
 if ($action) {
     // Si hay una acción, delegamos al controlador de la API.
-    $apiController = new ApiController($config);
-    $apiController->handle($action);
+    try {
+        $apiController = new ApiController($config);
+        $apiController->handle($action);
+    } catch (\Throwable $e) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+        echo json_encode(['error' => 'Server Configuration Error: ' . $e->getMessage()]);
+        exit;
+    }
 } else {
     // Si no es una petición a la API, mostramos la vista HTML.
     $monthLabels = $config['month_labels'];
