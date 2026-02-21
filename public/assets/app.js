@@ -741,6 +741,67 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         switchView('gastos');
+
+        // Lógica de Modal Nuevo Año
+        const $btnNewYear = document.getElementById('btn-new-year');
+        const $modalNewYear = document.getElementById('modal-new-year');
+        const $btnCancelNewYear = document.getElementById('btn-cancel-new-year');
+        const $formNewYear = document.getElementById('form-new-year');
+        const $inputNewYear = document.getElementById('input-new-year');
+        const $newYearLoading = document.getElementById('new-year-loading');
+        const $newYearResult = document.getElementById('new-year-result');
+
+        if ($btnNewYear && $modalNewYear) {
+            $btnNewYear.addEventListener('click', () => {
+                $modalNewYear.style.display = 'flex';
+                $inputNewYear.focus();
+            });
+
+            $btnCancelNewYear.addEventListener('click', () => {
+                $modalNewYear.style.display = 'none';
+                $newYearResult.textContent = '';
+                $formNewYear.style.display = 'flex';
+                $newYearLoading.style.display = 'none';
+            });
+
+            $formNewYear.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const yearToCreate = $inputNewYear.value;
+
+                if (!confirm(`¿Estás seguro de que deseas automatizar la creación del año ${yearToCreate}?\n\nEsto clonará la plantilla de Sheets y creará la carpeta Renta ${yearToCreate} en tu Google Drive.`)) {
+                    return;
+                }
+
+                $formNewYear.style.display = 'none';
+                $newYearLoading.style.display = 'flex';
+                $newYearResult.textContent = '';
+
+                try {
+                    const res = await fetch(`?action=create_year`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ year: yearToCreate })
+                    });
+
+                    const data = await res.json();
+                    $newYearLoading.style.display = 'none';
+
+                    if (data.status === 'success') {
+                        $newYearResult.className = 'form__result form__result--success';
+                        $newYearResult.innerHTML = `✅ Año ${yearToCreate} creado con éxito.<br>Refrescando en 3s...`;
+                        setTimeout(() => window.location.reload(), 3000);
+                    } else {
+                        throw new Error(data.message || 'Error desconocido.');
+                    }
+
+                } catch (err) {
+                    $newYearLoading.style.display = 'none';
+                    $formNewYear.style.display = 'flex';
+                    $newYearResult.className = 'form__result form__result--error';
+                    $newYearResult.textContent = "Error: " + err.message;
+                }
+            });
+        }
     });
 
 })();

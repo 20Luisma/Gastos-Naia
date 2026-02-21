@@ -8,7 +8,8 @@
     <title>Gastos Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="assets/styles.css?v=1.2">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 
 <body>
@@ -35,6 +36,12 @@
                 <button class="nav__btn" data-view="anual">
                     <span class="nav__btn-icon">📊</span>
                     <span>Resumen Anual</span>
+                </button>
+                <button class="nav__btn" id="btn-new-year"
+                    style="border: 1px dashed rgba(255,255,255,0.3); color: #fff; margin-left: 0.5rem;"
+                    title="Crear un nuevo año automáticamente">
+                    <span class="nav__btn-icon">✨</span>
+                    <span>Nuevo Año</span>
                 </button>
             </nav>
         </div>
@@ -276,6 +283,43 @@
                     <div id="files-list" class="files-list"></div>
                 </div>
             </section>
+
+            <!-- ═══ Modal: Nuevo Año ═══ -->
+            <div id="modal-new-year" class="modal-overlay"
+                style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 1rem; backdrop-filter: blur(5px);">
+                <div class="card" style="width: 100%; max-width: 400px; position: relative;">
+                    <div class="card__header">
+                        <span class="card__icon">✨</span>
+                        <h2 class="card__title">Crear Nuevo Año</h2>
+                    </div>
+                    <form id="form-new-year" class="form">
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Escribe el año que quieres generar (ej: 2027). Esto clonará la plantilla maestra, creará la
+                            carpeta "Renta 2027" y configurará los 12 meses.
+                        </p>
+                        <label class="form__field">
+                            <span class="form__label">Año a crear</span>
+                            <input type="number" id="input-new-year" class="form__input" required min="2020" max="2100"
+                                value="<?= date('Y') + 1 ?>">
+                        </label>
+                        <div class="form__actions" style="margin-top: 1rem;">
+                            <button type="submit" class="btn btn--primary" id="btn-submit-new-year">
+                                <span>🚀</span> Generar
+                            </button>
+                            <button type="button" class="btn btn--ghost" id="btn-cancel-new-year">Cancelar</button>
+                        </div>
+                    </form>
+
+                    <!-- Estado de Carga / Éxito -->
+                    <div id="new-year-loading" class="loading" style="display:none; padding: 1.5rem 1rem;">
+                        <div class="spinner"></div>
+                        <span id="new-year-status-text" style="text-align: center; font-size: 0.9rem;">Clonando
+                            plantilla...<br><small style="opacity: 0.6">Esto puede tardar unos 15
+                                segundos</small></span>
+                    </div>
+                    <div id="new-year-result" class="form__result" style="text-align:center;"></div>
+                </div>
+            </div>
 
         </main>
 

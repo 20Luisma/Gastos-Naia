@@ -197,6 +197,144 @@ class ApiController
                     ]);
                     break;
 
+                case 'create_year':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    $newYear = (int) ($input['year'] ?? 0);
+
+                    if ($newYear < 2020 || $newYear > 2100) {
+                        throw new \Exception("Año inválido proporcionado: $newYear");
+                    }
+
+                    // 1. Verificamos si ya existe
+                    if (isset($this->config['spreadsheets'][$newYear]) && !empty($this->config['spreadsheets'][$newYear])) {
+                        throw new \Exception("El año $newYear ya existe en la configuración.");
+                    }
+
+                    $templateId = $this->config['template_spreadsheet_id'] ?? '';
+                    $rootFolderId = $this->config['root_drive_folder_id'] ?? '';
+
+                    if (empty($templateId) || $templateId === 'PENDING_TEMPLATE_ID') {
+                        throw new \Exception("Falta configurar el 'template_spreadsheet_id' en config.php. Por favor, especifica el ID de la plantilla.");
+                    }
+                    if (empty($rootFolderId)) {
+                        throw new \Exception("Falta configurar el 'root_drive_folder_id' en config.php.");
+                    }
+
+                    // 2. Clonar el Spreadsheet de Plantilla
+                    $client = $this->createGoogleClient();
+                    $drive = new Drive($client);
+
+                    $newSheetName = "Gastos Naia $newYear - Hojas de Cálculo";
+                    $file = new \Google\Service\Drive\DriveFile();
+                    $file->setName($newSheetName);
+
+                    try {
+                        $copiedFile = $drive->files->copy($templateId, $file);
+                        $newSpreadsheetId = $copiedFile->getId();
+                    } catch (\Exception $e) {
+                        throw new \Exception("Error al clonar la Plantilla de Sheets: " . $e->getMessage());
+                    }
+
+                    // 3. Crear Carpeta "Renta YYYY" en el Root Folder
+                    $folderMetadata = new \Google\Service\Drive\DriveFile([
+                        'name' => "Renta $newYear",
+                        'parents' => [$rootFolderId],
+                        'mimeType' => 'application/vnd.google-apps.folder'
+                    ]);
+
+                    try {
+                        $newFolder = $drive->files->create($folderMetadata, ['fields' => 'id']);
+                        $newFolderId = $newFolder->getId();
+                    } catch (\Exception $e) {
+                        throw new \Exception("Error al crear carpeta principal 'Renta $newYear': " . $e->getMessage());
+                    }
+
+                    // 3.5 Crear las 12 subcarpetas de los meses dentro de la carpeta "Renta YYYY"
+                    $monthLabels = $this->config['month_labels'] ?? [];
+                    try {
+                        // Creating folders sequentially (Google APIs client easily supports this for 12 items without hitting rate limits)
+                        for ($m = 1; $m <= 12; $m++) {
+                            $mName = $monthLabels[$m] ?? 'Mes' . $m;
+                            $subFolderTitle = sprintf("%d) Recibos %s %d", $m, $mName, $newYear);
+                            $subFolderMetadata = new \Google\Service\Drive\DriveFile([
+                                'name' => $subFolderTitle,
+                                'parents' => [$newFolderId],
+                                'mimeType' => 'application/vnd.google-apps.folder'
+                            ]);
+                            $drive->files->create($subFolderMetadata, ['fields' => 'id']);
+                        }
+                    } catch (\Exception $e) {
+                        // Log the error but don't stop the whole process as the year can still function
+                        error_log("Error al crear subcarpetas mensuales para Renta $newYear: " . $e->getMessage());
+                    }
+
+                    // 4. Mover el Spreadsheet clonado a esa carpeta recién creada
+                    try {
+                        // Retrieve the existing parents to remove
+                        $fileToMove = $drive->files->get($newSpreadsheetId, ['fields' => 'parents']);
+                        $previousParents = join(',', $fileToMove->getParents());
+                        // Move the file to the new folder
+                        $drive->files->update($newSpreadsheetId, new \Google\Service\Drive\DriveFile(), [
+                            'addParents' => $newFolderId,
+                            'removeParents' => $previousParents,
+                            'fields' => 'id, parents'
+                        ]);
+                    } catch (\Exception $e) {
+                        // Ignoramos el error de mover, lo importante es que se ha creado
+                        error_log("No se pudo mover Sheet a la carpeta: " . $e->getMessage());
+                    }
+
+                    // 5. Modificar el archivo config.php directamente para guardar los nuevos IDs
+                    $configPath = __DIR__ . '/../../../config.php';
+                    if (!file_exists($configPath)) {
+                        $configPath = __DIR__ . '/../../config.php'; // fallback depending on structure
+                    }
+                    if (!is_writable($configPath)) {
+                        throw new \Exception("El archivo config.php no tiene permisos de escritura (CHMOD).");
+                    }
+
+                    $configData = file_get_contents($configPath);
+                    if (!$configData) {
+                        throw new \Exception("No se pudo leer config.php.");
+                    }
+
+                    // Inyectar el Año en el Array de Spreadsheets
+                    $spreadSheetsPattern = "/('spreadsheets'\s*=>\s*\[)(.*?)(\b\s*\])/is";
+                    if (preg_match($spreadSheetsPattern, $configData, $matches)) {
+                        $innerSp = $matches[2];
+                        $innerSp = rtrim($innerSp);
+                        $newLineSp = "\n        $newYear => '$newSpreadsheetId',";
+                        if (substr($innerSp, -1) !== ',') {
+                            $innerSp .= ',';
+                        }
+                        $configData = preg_replace($spreadSheetsPattern, "$1$innerSp$newLineSp\n    $3", $configData);
+                    }
+
+                    // Inyectar el Año en el Array de Drive Folders
+                    $foldersPattern = "/('drive_folders'\s*=>\s*\[)(.*?)(\b\s*\])/is";
+                    if (preg_match($foldersPattern, $configData, $matches)) {
+                        $innerFo = $matches[2];
+                        $innerFo = rtrim($innerFo);
+                        $newLineFo = "\n        $newYear => '$newFolderId',";
+                        if (substr($innerFo, -1) !== ',') {
+                            $innerFo .= ',';
+                        }
+                        $configData = preg_replace($foldersPattern, "$1$innerFo$newLineFo\n    $3", $configData);
+                    }
+
+                    if (file_put_contents($configPath, $configData) === false) {
+                        throw new \Exception("Error al guardar config.php modificado. Revisar permisos ftp.");
+                    }
+
+                    $this->jsonResponse([
+                        'status' => 'success',
+                        'message' => 'Año creado correctamente.',
+                        'newSpreadsheetId' => $newSpreadsheetId,
+                        'newFolderId' => $newFolderId
+                    ]);
+                    break;
+
                 default:
                     http_response_code(400);
                     $this->jsonResponse(['error' => "Acción desconocida: {$action}"]);
