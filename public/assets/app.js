@@ -787,9 +787,24 @@
                     $newYearLoading.style.display = 'none';
 
                     if (data.status === 'success') {
-                        $newYearResult.className = 'form__result form__result--success';
-                        $newYearResult.innerHTML = `✅ Año ${yearToCreate} creado con éxito.<br>Refrescando en 3s...`;
-                        setTimeout(() => window.location.reload(), 3000);
+                        if (data.config_saved === false) {
+                            $newYearResult.className = 'form__result form__result--success';
+                            $newYearResult.style.textAlign = 'left';
+
+                            let manualMsg = `<h3 style="margin:0 0 10px;color:#00c4b3">✅ Carpetas e Excel Creados</h3>`;
+                            manualMsg += `<p style="font-size:0.85rem;margin-bottom:10px;">Tu servidor bloquea autoguardados por seguridad. Abre tu <b>config.php</b> en el Panel y añade estas 2 líneas al año ${yearToCreate}:</p>`;
+                            manualMsg += `<div style="background:rgba(0,0,0,0.5);padding:10px;border-radius:6px;font-family:monospace;font-size:0.75rem;margin-bottom:10px;color:#cbd5e1;overflow-wrap:anywhere;">`;
+                            manualMsg += `// En 'spreadsheets':<br><span style="color:#a855f7">${data.manualCodeSpreadsheet.trim()}</span><br><br>`;
+                            manualMsg += `// En 'drive_folders':<br><span style="color:#a855f7">${data.manualCodeFolder.trim()}</span>`;
+                            manualMsg += `</div>`;
+                            manualMsg += `<button type="button" class="btn btn--ghost" style="width:100%" onclick="window.location.reload()">Refrescar App Completado</button>`;
+
+                            $newYearResult.innerHTML = manualMsg;
+                        } else {
+                            $newYearResult.className = 'form__result form__result--success';
+                            $newYearResult.innerHTML = `✅ Año ${yearToCreate} creado y auto-configurado con éxito.<br>Refrescando en 3s...`;
+                            setTimeout(() => window.location.reload(), 3000);
+                        }
                     } else {
                         throw new Error(data.message || 'Error desconocido.');
                     }

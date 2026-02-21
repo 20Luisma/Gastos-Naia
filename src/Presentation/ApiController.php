@@ -291,7 +291,7 @@ class ApiController
                         $configPath = __DIR__ . '/../../config.php'; // fallback depending on structure
                     }
                     if (!is_writable($configPath)) {
-                        throw new \Exception("El archivo config.php no tiene permisos de escritura (CHMOD).");
+                        throw new \Exception("El archivo config.php no tiene permisos de escritura en el servidor FTP.");
                     }
 
                     $configData = file_get_contents($configPath);
@@ -300,38 +300,43 @@ class ApiController
                     }
 
                     // Inyectar el Año en el Array de Spreadsheets
-                    $spreadSheetsPattern = "/('spreadsheets'\s*=>\s*\[)(.*?)(\b\s*\])/is";
-                    if (preg_match($spreadSheetsPattern, $configData, $matches)) {
+                    $spreadSheetsPattern = "/('spreadsheets'\s*=>\s*\[)(.*?)(\nM.*?\s*\])/is";
+                    if (preg_match("/('spreadsheets'\s*=>\s*\[)(.*?)(\n\s*\])/is", $configData, $matches)) {
                         $innerSp = $matches[2];
                         $innerSp = rtrim($innerSp);
-                        $newLineSp = "\n        $newYear => '$newSpreadsheetId',";
                         if (substr($innerSp, -1) !== ',') {
                             $innerSp .= ',';
                         }
-                        $configData = preg_replace($spreadSheetsPattern, "$1$innerSp$newLineSp\n    $3", $configData);
+                        $newLineSp = "\n        $newYear => '$newSpreadsheetId',";
+                        $configData = preg_replace("/('spreadsheets'\s*=>\s*\[)(.*?)(\n\s*\])/is", "$1$innerSp$newLineSp$3", $configData);
                     }
 
                     // Inyectar el Año en el Array de Drive Folders
-                    $foldersPattern = "/('drive_folders'\s*=>\s*\[)(.*?)(\b\s*\])/is";
-                    if (preg_match($foldersPattern, $configData, $matches)) {
+                    if (preg_match("/('drive_folders'\s*=>\s*\[)(.*?)(\n\s*\])/is", $configData, $matches)) {
                         $innerFo = $matches[2];
                         $innerFo = rtrim($innerFo);
-                        $newLineFo = "\n        $newYear => '$newFolderId',";
                         if (substr($innerFo, -1) !== ',') {
                             $innerFo .= ',';
                         }
-                        $configData = preg_replace($foldersPattern, "$1$innerFo$newLineFo\n    $3", $configData);
+                        $newLineFo = "\n        $newYear => '$newFolderId',";
+                        $configData = preg_replace("/('drive_folders'\s*=>\s*\[)(.*?)(\n\s*\])/is", "$1$innerFo$newLineFo$3", $configData);
                     }
 
+                    $configSaved = true;
                     if (file_put_contents($configPath, $configData) === false) {
-                        throw new \Exception("Error al guardar config.php modificado. Revisar permisos ftp.");
+                        $configSaved = false;
+                        error_log("Aviso: El servidor FTP (InfinityFree) bloqueó la auto-modificación segura de config.php");
                     }
 
                     $this->jsonResponse([
                         'status' => 'success',
-                        'message' => 'Año creado correctamente.',
+                        'config_saved' => $configSaved,
+                        'message' => 'Carpetas construidas en Google Drive.',
                         'newSpreadsheetId' => $newSpreadsheetId,
-                        'newFolderId' => $newFolderId
+                        'newFolderId' => $newFolderId,
+                        // Proveemos estos datos por si configSaved es false y el usuario tiene que copiarlos a mano
+                        'manualCodeSpreadsheet' => "\n        $newYear => '$newSpreadsheetId',",
+                        'manualCodeFolder' => "\n        $newYear => '$newFolderId',"
                     ]);
                     break;
 
