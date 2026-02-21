@@ -115,6 +115,7 @@
         anual: document.getElementById('view-anual'),
         mensual: document.getElementById('view-mensual'),
         gastos: document.getElementById('view-gastos'),
+        'nuevo-anio': document.getElementById('section-nuevo-anio'),
     };
 
     function switchView(name) {
@@ -742,33 +743,32 @@
     document.addEventListener('DOMContentLoaded', () => {
         switchView('gastos');
 
-        // Lógica de Modal Nuevo Año
+        // Lógica de Vista Nuevo Año (incrustada, mismo sistema que otras vistas)
         const $btnNewYear = document.getElementById('btn-new-year');
-        const $modalNewYear = document.getElementById('modal-new-year');
         const $btnCancelNewYear = document.getElementById('btn-cancel-new-year');
         const $formNewYear = document.getElementById('form-new-year');
         const $inputNewYear = document.getElementById('input-new-year');
         const $newYearLoading = document.getElementById('new-year-loading');
         const $newYearResult = document.getElementById('new-year-result');
 
-        if ($btnNewYear && $modalNewYear) {
+        // El botón ya tiene data-view="nuevo-anio" así que el sistema global lo gestiona automáticamente
+        // Solo necesitamos: reset del estado cuando se entra a la vista
+        if ($btnNewYear) {
             $btnNewYear.addEventListener('click', () => {
-                $modalNewYear.style.display = 'flex';
-                $inputNewYear.focus();
+                // Reset ui state en cada visita
+                if ($formNewYear) $formNewYear.style.display = '';
+                if ($newYearLoading) $newYearLoading.style.display = 'none';
+                if ($newYearResult) $newYearResult.textContent = '';
+                if ($inputNewYear) $inputNewYear.focus();
             });
+        }
 
-            $btnCancelNewYear.addEventListener('click', () => {
-                $modalNewYear.style.display = 'none';
-                $newYearResult.textContent = '';
-                $formNewYear.style.display = 'flex';
-                $newYearLoading.style.display = 'none';
-            });
-
+        if ($formNewYear) {
             $formNewYear.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const yearToCreate = $inputNewYear.value;
 
-                if (!confirm(`¿Estás seguro de que deseas automatizar la creación del año ${yearToCreate}?\n\nEsto clonará la plantilla de Sheets y creará la carpeta Renta ${yearToCreate} en tu Google Drive.`)) {
+                if (!confirm(`¿Estás seguro? Esto clonará la plantilla de Sheets y creará la carpeta Renta ${yearToCreate} en Google Drive.`)) {
                     return;
                 }
 

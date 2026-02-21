@@ -37,7 +37,7 @@
                     <span class="nav__btn-icon">📊</span>
                     <span>Resumen Anual</span>
                 </button>
-                <button class="nav__btn" id="btn-new-year"
+                <button class="nav__btn" id="btn-new-year" data-view="nuevo-anio"
                     style="border: 1px dashed rgba(255,255,255,0.3); color: #fff; margin-left: 0.5rem;"
                     title="Crear un nuevo año automáticamente">
                     <span class="nav__btn-icon">✨</span>
@@ -284,10 +284,10 @@
                 </div>
             </section>
 
-            <!-- ═══ Modal: Nuevo Año ═══ -->
-            <div id="modal-new-year" class="modal-overlay"
-                style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 1rem; backdrop-filter: blur(5px);">
-                <div class="card" style="width: 100%; max-width: 400px; position: relative;">
+
+            <!-- ═══ Vista: Nuevo Año ═══ -->
+            <section id="section-nuevo-anio" class="view" style="display:none;" data-view="nuevo-anio">
+                <div class="card" style="max-width: 480px; margin: 2rem auto;">
                     <div class="card__header">
                         <span class="card__icon">✨</span>
                         <h2 class="card__title">Crear Nuevo Año</h2>
@@ -295,7 +295,7 @@
                     <form id="form-new-year" class="form">
                         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
                             Escribe el año que quieres generar (ej: 2027). Esto clonará la plantilla maestra, creará la
-                            carpeta "Renta 2027" y configurará los 12 meses.
+                            carpeta "Renta 2027" y configurará los 12 meses de recibos.
                         </p>
                         <label class="form__field">
                             <span class="form__label">Año a crear</span>
@@ -306,7 +306,8 @@
                             <button type="submit" class="btn btn--primary" id="btn-submit-new-year">
                                 <span>🚀</span> Generar
                             </button>
-                            <button type="button" class="btn btn--ghost" id="btn-cancel-new-year">Cancelar</button>
+                            <button type="button" class="btn btn--ghost" id="btn-cancel-new-year"
+                                data-view="gastos">Cancelar</button>
                         </div>
                     </form>
 
@@ -319,7 +320,8 @@
                     </div>
                     <div id="new-year-result" class="form__result" style="text-align:center;"></div>
                 </div>
-            </div>
+            </section>
+
 
         </main>
 
