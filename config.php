@@ -61,7 +61,7 @@ return [
     // El ID de la hoja de cálculo limpia (sin datos) que se usará como molde al crear un nuevo año
     'template_spreadsheet_id' => '1pfOTdMQprIurBvheNZPI9Qr9VjJwEuvn',
     // La carpeta "Naia General" en Drive donde se crearán las subcarpetas de años y se guardarán copiados los Sheets
-    'root_drive_folder_id' => '1n9Tu-GyUgIfBhfdThNHR7LV833y02GVp',
+    'root_drive_folder_id' => '1n9Tu-GyUglfBhfdThNHR7LV833y02GVp',
 
     // ── Spreadsheets por año ──
     'spreadsheets' => [
