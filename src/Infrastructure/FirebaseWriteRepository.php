@@ -61,8 +61,10 @@ class FirebaseWriteRepository
 
             foreach ($monthlyTotals as $mt) {
                 $month = $mt['month'];
-                $totalGastos = $mt['total'];
-                $transferencia = $totalGastos > 0.0 ? round($totalGastos / 2, 2) : 0.0;
+                // Como el Excel ya precalcula en la primera pestaña el 'Total/2' (y de ahí saca el dato el scraper),
+                // el monto recuperado ya es la transferencia.
+                $transferencia = $mt['total'];
+                $totalGastos = $transferencia > 0.0 ? round($transferencia * 2, 2) : 0.0;
 
                 $summary = $repo->getMonthlyFinancialSummary($year, $month);
                 $pension = $summary['pension'] > 0.0 ? $summary['pension'] : $lastKnownPension;

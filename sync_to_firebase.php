@@ -55,8 +55,10 @@ foreach ($years as $year) {
 
     foreach ($monthlyTotals as $mt) {
         $month = $mt['month'];
-        $totalGastos = $mt['total'];
-        $transferencia = $totalGastos > 0.0 ? round($totalGastos / 2, 2) : 0.0;
+        // Lo que leemos de "getMonthlyTotals" es la columna resumen, que el cliente llama "Total/2".
+        // Por lo tanto, el scraper está trayendo ya la mitad directamente de la celda de Sheets.
+        $transferencia = $mt['total'];
+        $totalGastos = $transferencia > 0.0 ? round($transferencia * 2, 2) : 0.0;
 
         $summary = $repo->getMonthlyFinancialSummary($year, $month);
         $pension = $summary['pension'] > 0.0 ? $summary['pension'] : $lastKnownPension;
