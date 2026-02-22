@@ -8,6 +8,8 @@ use GastosNaia\Application\DeleteReceiptUseCase;
 use GastosNaia\Application\EditExpenseUseCase;
 use GastosNaia\Application\GetExpensesUseCase;
 use GastosNaia\Application\UploadReceiptUseCase;
+use GastosNaia\Infrastructure\CachedExpenseRepository;
+use GastosNaia\Infrastructure\FileCache;
 use GastosNaia\Infrastructure\GoogleDriveReceiptRepository;
 use GastosNaia\Infrastructure\GoogleSheetsExpenseRepository;
 use Google\Client;
@@ -27,7 +29,7 @@ class ApiController
     private DeleteReceiptUseCase $deleteReceiptUseCase;
 
     // Repositories
-    private GoogleSheetsExpenseRepository $expenseRepository;
+    private CachedExpenseRepository $expenseRepository;
     private GoogleDriveReceiptRepository $receiptRepository;
 
     public function __construct(array $config)
@@ -36,7 +38,9 @@ class ApiController
 
         $client = $this->createGoogleClient();
 
-        $this->expenseRepository = new GoogleSheetsExpenseRepository($client, $config);
+        $rawRepository = new GoogleSheetsExpenseRepository($client, $config);
+        $cache = new FileCache(__DIR__ . '/../../../cache', ttl: 300);
+        $this->expenseRepository = new CachedExpenseRepository($rawRepository, $cache);
         $this->receiptRepository = new GoogleDriveReceiptRepository($client, $config);
 
         $this->getExpensesUseCase = new GetExpensesUseCase($this->expenseRepository, $this->receiptRepository);
