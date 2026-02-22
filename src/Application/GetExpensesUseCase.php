@@ -19,6 +19,12 @@ class GetExpensesUseCase
     public function execute(int $year, int $month): array
     {
         $expenses = $this->expenseRepository->getExpenses($year, $month);
+
+        // Ordenamos cronológicamente: de fecha más antigua a más nueva
+        usort($expenses, function ($a, $b) {
+            return strtotime($a->getDate()) <=> strtotime($b->getDate());
+        });
+
         $files = $this->receiptRepository->listReceipts($year, $month);
         $warnings = $this->expenseRepository->getWarnings();
         $summary = $this->expenseRepository->getMonthlyFinancialSummary($year, $month);
