@@ -18,6 +18,13 @@ interface ExpenseRepositoryInterface
     /**
      * @param int $year
      * @param int $month
+     * @return array with keys: total_gastos, transferencia_naia, pension, total_final
+     */
+    public function getMonthlyFinancialSummary(int $year, int $month): array;
+
+    /**
+     * @param int $year
+     * @param int $month
      * @return Expense[]
      */
     public function getExpenses(int $year, int $month): array;

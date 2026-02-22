@@ -74,6 +74,20 @@ class CachedExpenseRepository implements ExpenseRepositoryInterface
         return $expenses;
     }
 
+    public function getMonthlyFinancialSummary(int $year, int $month): array
+    {
+        $key = "monthly_financial_{$year}_{$month}";
+        $cached = $this->cache->get($key);
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $data = $this->inner->getMonthlyFinancialSummary($year, $month);
+        $this->cache->set($key, $data);
+        return $data;
+    }
+
     public function addExpense(int $year, int $month, Expense $expense): bool
     {
         $result = $this->inner->addExpense($year, $month, $expense);

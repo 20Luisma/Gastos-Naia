@@ -56,9 +56,17 @@ class AskAiUseCaseTest extends TestCase
 
         $this->expenseRepositoryMock->method('getAvailableYears')->willReturn([2024]);
 
+        // Mock getMonthlyFinancialSummary (new method)
+        $this->expenseRepositoryMock->method('getMonthlyFinancialSummary')
+            ->willReturnCallback(function ($year, $month) {
+                if ($year === 2024 && $month === 1) {
+                    return ['total_gastos' => 100.0, 'transferencia_naia' => 50.0, 'pension' => 238.0, 'total_final' => 288.0];
+                }
+                return ['total_gastos' => 0.0, 'transferencia_naia' => 0.0, 'pension' => 0.0, 'total_final' => 0.0];
+            });
+
         // Mock getExpenses to return 1 item when called for 2024 month 1
-        $this->expenseRepositoryMock->expects($this->exactly(12))
-            ->method('getExpenses')
+        $this->expenseRepositoryMock->method('getExpenses')
             ->willReturnCallback(function ($year, $month) {
                 if ($year === 2024 && $month === 1) {
                     return [new Expense('Enero', 'Comida', 50.5)];
@@ -74,8 +82,11 @@ class AskAiUseCaseTest extends TestCase
 
         $cacheContent = json_decode(file_get_contents($this->cacheFile), true);
         $this->assertIsArray($cacheContent);
-        $this->assertCount(1, $cacheContent);
-        $this->assertEquals('Comida', $cacheContent[0]['desc']);
-        $this->assertEquals(50.5, $cacheContent[0]['amount']);
+        $this->assertCount(1, $cacheContent); // 1 year
+        $this->assertEquals(2024, $cacheContent[0]['year']);
+        $this->assertCount(1, $cacheContent[0]['meses']); // only January has data
+        $this->assertEquals(1, $cacheContent[0]['meses'][0]['mes']);
+        $this->assertEquals(50.0, $cacheContent[0]['meses'][0]['transferencia_naia']);
+        $this->assertEquals('Comida', $cacheContent[0]['meses'][0]['gastos'][0]['desc']);
     }
 }

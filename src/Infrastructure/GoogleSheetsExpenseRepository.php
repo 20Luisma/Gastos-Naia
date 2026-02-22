@@ -130,6 +130,44 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
         return $expenses;
     }
 
+    public function getMonthlyFinancialSummary(int $year, int $month): array
+    {
+        $spreadsheetId = $this->getSpreadsheetId($year);
+        $sheetName = $this->config['months'][$month] ?? null;
+
+        if (!$sheetName) {
+            return ['total_gastos' => 0.0, 'transferencia_naia' => 0.0, 'pension' => 0.0, 'total_final' => 0.0];
+        }
+
+        // We read column E rows 11 to 16 (E11=total gastos, E14=total a pagar, E15=pension, E16=total final)
+        $range = "{$sheetName}!E11:E16";
+
+        try {
+            $response = $this->sheets->spreadsheets_values->get(
+                $spreadsheetId,
+                $range,
+                ['valueRenderOption' => 'UNFORMATTED_VALUE']
+            );
+            $values = $response->getValues() ?? [];
+        } catch (\Exception $e) {
+            $this->warnings[] = "Error leyendo resumen financiero {$sheetName} {$year}: " . $e->getMessage();
+            return ['total_gastos' => 0.0, 'transferencia_naia' => 0.0, 'pension' => 0.0, 'total_final' => 0.0];
+        }
+
+        // E11 = row index 0, E12 = row index 1, E13 = row index 2, E14 = row index 3, E15 = row index 4, E16 = row index 5
+        $totalGastos = isset($values[0][0]) && is_numeric($values[0][0]) ? (float) $values[0][0] : 0.0;
+        $transferencia = isset($values[3][0]) && is_numeric($values[3][0]) ? (float) $values[3][0] : 0.0;
+        $pension = isset($values[4][0]) && is_numeric($values[4][0]) ? (float) $values[4][0] : 0.0;
+        $totalFinal = isset($values[5][0]) && is_numeric($values[5][0]) ? (float) $values[5][0] : 0.0;
+
+        return [
+            'total_gastos' => $totalGastos,     // E11: suma de todos los gastos del mes
+            'transferencia_naia' => $transferencia,   // E14: lo que se transfiere a Naia (total/2)
+            'pension' => $pension,          // E15: pensión alimentaria
+            'total_final' => $totalFinal,       // E16: total a pagar (transferencia + pensión)
+        ];
+    }
+
     public function addExpense(int $year, int $month, Expense $expense): bool
     {
         $spreadsheetId = $this->getSpreadsheetId($year);

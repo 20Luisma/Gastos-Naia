@@ -24,55 +24,102 @@ class AskAiUseCase
             return "Error: La clave de la API de OpenAI no está configurada. Por favor, añádela al archivo `.env` como `OPENAI_API_KEY`.";
         }
 
-        // 1. Obtener TODOS los gastos históricos disponibles (con caché de 1h)
+        // 1. Obtener TODOS los datos (con caché de 1h)
         $cacheFile = __DIR__ . '/../../backups/ai_cache.json';
         $cacheTime = 3600; // 1 hora
-        $allExpensesData = [];
+        $contextData = [];
 
         if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
-            $allExpensesData = json_decode(file_get_contents($cacheFile), true);
+            $contextData = json_decode(file_get_contents($cacheFile), true);
         } else {
             $years = $this->expenseRepository->getAvailableYears();
+
             foreach ($years as $year) {
+                $meses = [];
                 for ($month = 1; $month <= 12; $month++) {
+                    // Resumen financiero oficial del mes (E11/E14/E15/E16 del sheet)
+                    $finSummary = $this->expenseRepository->getMonthlyFinancialSummary($year, $month);
+
+                    // Gastos individuales del mes para preguntas de detalle
                     $expenses = $this->expenseRepository->getExpenses($year, $month);
+                    $items = [];
                     foreach ($expenses as $expense) {
-                        $allExpensesData[] = [
-                            'year' => $year,
-                            'month' => $month,
+                        $items[] = [
                             'date' => $expense->getDate(),
                             'desc' => $expense->getDescription(),
-                            'amount' => $expense->getAmount()
+                            'amount' => $expense->getAmount(),
                         ];
                     }
+
+                    if (empty($items) && $finSummary['total_gastos'] === 0.0) {
+                        continue; // Skip empty months
+                    }
+
+                    $meses[] = [
+                        'mes' => $month,
+                        'total_gastos' => $finSummary['total_gastos'],       // E11: suma de gastos
+                        'transferencia_naia' => $finSummary['transferencia_naia'], // E14: lo que le paso a Naia
+                        'pension' => $finSummary['pension'],            // E15: pensión alimentaria
+                        'total_final' => $finSummary['total_final'],        // E16: total_a_pagar (E14+E15)
+                        'gastos' => $items,                            // detalle de cada gasto
+                    ];
+                }
+
+                if (!empty($meses)) {
+                    $contextData[] = [
+                        'year' => $year,
+                        'meses' => $meses,
+                    ];
                 }
             }
-            // Asegurarse de que el directorio existe
+
+            // Guardar caché
             if (!is_dir(dirname($cacheFile))) {
                 mkdir(dirname($cacheFile), 0777, true);
             }
-            file_put_contents($cacheFile, json_encode($allExpensesData, JSON_UNESCAPED_UNICODE));
+            file_put_contents($cacheFile, json_encode($contextData, JSON_UNESCAPED_UNICODE));
         }
 
-        $dataContext = json_encode($allExpensesData, JSON_UNESCAPED_UNICODE);
+        $dataContext = json_encode($contextData, JSON_UNESCAPED_UNICODE);
 
         // 2. System Prompt Corporativo
-        $systemPrompt = "Eres un Asistente y Contador IA de nivel corporativo para la aplicación 'Gastos Naia'. 
-        Tu misión principal es analizar el historial de gastos del usuario y responder con una precisión impecable, un tono corporativo y profesional, y una presentación estructuralmente perfecta.
+        $systemPrompt = "Eres el Asistente Contable IA de la aplicación 'Gastos Naia'.
+        Analizas los gastos de la hija Naia que son compartidos entre sus dos progenitores al 50%.
+        Responde siempre con precisión, tono profesional y formato Markdown.
         
-        REGLAS Y CAPACIDADES IMPORTANTES (RESPETA TODAS ESTRICTAMENTE):
-        1. **Contexto Temporal:** Usa los campos 'year' (Año) y 'month' (Mes numérico) del JSON para filtrar y cruzar datos con precisión milimétrica cuando te pregunten por fechas.
-        2. **Tolerancia a errores tipográficos (Fuzzy Matching):** Asume inteligentemente errores (ej. 'tetto' -> 'teatro', 'Iverdroa' -> 'Iberdrola'). Usa tu comprensión semántica para cruzar intenciones con el historial.
-        3. **Análisis Matemático:** Haz cálculos meticulosos. Si te piden sumas totales o promedios, calcúlalos en base al JSON antes de responder.
-        4. **Formato y Redacción Profesional (CRÍTICO):** 
-           - Redacta como un alto ejecutivo financiero: educado, claro y yendo al grano.
-           - Utiliza SIEMPRE formato Markdown rico. 
-           - Deja abundante aire y doble salto de línea entre párrafos y tablas.
-           - Usa listas (- o *) para enumerar desgloses.
-           - Cualquier tabulación DEBE mostrarse SIEMPRE como una tabla Markdown pura, con columnas bien definidas.
-        5. **Foco Financiero:** Rechaza educadamente cualquier tema que no sea análisis de este historial de gastos.
+        REGLAS CRÍTICAS:
+        1. **Campo 'transferencia_naia'**: Es la cantidad exacta que el padre debe transferir a la madre por los gastos compartidos del mes (la mitad del total de gastos). USA ESTE CAMPO para preguntas como '¿cuánto le tengo que pasar a Naia?' o '¿cuánto debo transferir?'.
+        2. **Campo 'total_gastos'**: Es el total bruto de gastos del mes (lo que gasta Naia en total). USA ESTE para preguntas sobre el gasto total de Naia.
+        3. **Campo 'pension'**: Es la pensión alimentaria que paga el padre aparte de la transferencia.
+        4. **Campo 'total_final'**: Es la suma de 'transferencia_naia' + 'pension'. Lo que el padre paga en total ese mes.
+        5. **Campo 'gastos' (array)**: Contiene los gastos individuales (date, desc, amount). USA ESTE para detallar en qué se gastó el dinero.
+        6. Fuzzy Matching: 'tetto'→'teatro', 'Iverdroa'→'Iberdrola', etc.
+        7. Formato: usa tablas Markdown, negritas, listas. Deja espacio entre secciones.
+        8. Responde SOLO sobre estos gastos. Rechaza amablemente otros temas.
         
-        AQUÍ TIENES TODO EL HISTORIAL DE GASTOS EN JSON (year, month, date, desc, amount):
+        ESTRUCTURA DEL JSON DE DATOS:
+        [
+          {
+            'year': 2026,
+            'meses': [
+              {
+                'mes': 1,                      (enero=1, febrero=2, ...)
+                'total_gastos': 250.83,        ← Total bruto de gastos de Naia ese mes
+                'transferencia_naia': 125.42,  ← Lo que el padre transfiere a la madre
+                'pension': 238.20,             ← Pensión alimentaria del padre
+                'total_final': 363.62,         ← Todo lo que paga el padre (transferencia+pension)
+                'gastos': [                    ← Detalle de cada gasto individual
+                  {'date': '20/01/2026', 'desc': 'Baile', 'amount': 43.0},
+                  ...
+                ]
+              },
+              ...
+            ]
+          },
+          ...
+        ]
+        
+        DATOS REALES:
         " . $dataContext;
 
         // 3. Preparar la llamada a la API de OpenAI (gpt-4o-mini)
