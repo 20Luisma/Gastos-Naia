@@ -16,7 +16,10 @@ jobs:
         run: |
           sudo apt-get install -y php php-cli unzip
           curl -sS https://getcomposer.org/installer | php
-          php composer.phar install --no-dev --optimize-autoloader
+          php composer.phar install --optimize-autoloader
+
+      - name: Run unit tests
+        run: php composer.phar run test
 
       - name: Install sshpass
         run: sudo apt-get install -y sshpass

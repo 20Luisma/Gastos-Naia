@@ -1,0 +1,11 @@
+<?php
+
+/**
+ * Integration tests — requieren credenciales reales de Google.
+ *
+ * Para ejecutarlos localmente:
+ * 1. Asegúrate de tener .env y credentials/service-account.json configurados
+ * 2. vendor/bin/phpunit --testsuite Integration
+ *
+ * No se ejecutan en CI para no exponer credenciales.
+ */
