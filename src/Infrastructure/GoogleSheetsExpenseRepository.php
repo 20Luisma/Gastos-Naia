@@ -141,8 +141,8 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
             return $empty;
         }
 
-        // Scan columns D & E (rows 1–25) searching for labels — works regardless of exact row
-        $range = "{$sheetName}!D1:F25";
+        // Scan columns D, E & F (up to row 200) searching for labels — handles any number of expense rows
+        $range = "{$sheetName}!D1:F200";
 
         try {
             $response = $this->sheets->spreadsheets_values->get(
