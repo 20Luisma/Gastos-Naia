@@ -52,7 +52,33 @@ class AskAiUseCase
         // Sort years chronologically
         usort($contextData, fn($a, $b) => $a['year'] <=> $b['year']);
 
+        // ==============================================================
+        // FEATURE: PRE-CÁLCULO EXACTO PARA EVITAR ALUCINACIÓN ARITMÉTICA
+        // ==============================================================
+        $totalHistoricoAbsoluto = 0.0;
+        $totalesPorAno = [];
+
+        foreach ($contextData as $yearObj) {
+            $sumaAno = 0.0;
+            if (isset($yearObj['meses']) && is_array($yearObj['meses'])) {
+                foreach ($yearObj['meses'] as $mesObj) {
+                    if (isset($mesObj['total_final']) && is_numeric($mesObj['total_final'])) {
+                        $sumaAno += (float) $mesObj['total_final'];
+                    }
+                }
+            }
+            $totalesPorAno[$yearObj['year']] = round($sumaAno, 2);
+            $totalHistoricoAbsoluto += $sumaAno;
+        }
+        $totalHistoricoAbsoluto = round($totalHistoricoAbsoluto, 2);
+
+        $preCalculatedMetrics = [
+            'TOTAL_HISTORICO_ABSOLUTO (Suma real y exacta de todos los años juntos)' => $totalHistoricoAbsoluto,
+            'TOTAL_EXACTO_POR_AÑO' => $totalesPorAno
+        ];
+
         $dataContext = json_encode($contextData, JSON_UNESCAPED_UNICODE);
+        $precalcContext = json_encode($preCalculatedMetrics, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         // 2. System Prompt Corporativo
         $systemPrompt = "Eres el Asistente Contable IA de la aplicación 'Gastos Naia'.
@@ -94,8 +120,8 @@ class AskAiUseCase
         - Para promedios multi-año: muestra el promedio anual (total_año / meses_con_datos_ese_año) y el promedio global.
         
         REGLA 3 — SUMAS CORRECTAS:
-        - Suma todos los total_final de los meses con datos en el rango solicitado.
-        - Los meses que NO están en el JSON (futuro o sin datos) no cuentan ni en suma ni en denominador.
+        - **CRÍTICO: NO TENGAS ALUCINACIONES ARITMÉTICAS. USA EXCLUSIVAMENTE LOS PRE-CÁLCULOS EXACTOS DE LA SECCIÓN 'MÉTRICAS MATEMÁTICAS PRE-CALCULADAS'** para dar totales por año o el total histórico absoluto.
+        - NO intentes sumar tú los totales año por año para responder a gastos totales históricos. Usa el bloque de métricas pre-calculadas que ya es matemática pura.
         
         REGLA 4 — PENSIÓN:
         - El campo 'pension' es la pensión mensual de ese mes. Para el total anual de pensión: suma los valores de 'pension' de cada mes del año.
@@ -130,6 +156,9 @@ class AskAiUseCase
         
         == ESTRUCTURA DEL JSON ==
         [ { year: 2026, meses: [ { mes: 1, total_gastos: 250.83, transferencia_naia: 125.42, pension: 238.20, total_final: 363.62, gastos: [{date, desc, amount}] } ] } ]
+        
+        == MÉTRICAS MATEMÁTICAS PRE-CALCULADAS (100% FIABLES) ==
+        " . $precalcContext . "
         
         == DATOS REALES ==
         " . $dataContext;
