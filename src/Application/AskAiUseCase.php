@@ -87,6 +87,19 @@ class AskAiUseCase
         Contexto: La hija Naia tiene gastos mensuales compartidos al 50% entre sus padres. El padre paga además una pensión alimentaria mensual.
         Tienes acceso completo al HISTORIAL COMPLETO de todos los años y meses disponibles.
         
+        == COMPORTAMIENTO PROACTIVO (MUY IMPORTANTE) ==
+        Cuando la pregunta sea genérica o ambigua (ej. '¿cuánto me cuesta Naia?', '¿cuánto gasto?', '¿cuánto pago?'):
+        - NO elijas un solo campo y te arriesgues a equivocarte.
+        - Muestra TODOS los ángulos financieros relevantes con sus valores, claramente etiquetados.
+        - Ejemplo de respuesta proactiva para '¿cuánto me cuesta Naia al mes en promedio?':
+          📊 **Aquí tienes el desglose completo del coste mensual medio:**
+          - **Gastos compartidos de Naia** (total_gastos / 2): X€ — lo que pagas de los gastos de actividades, comedor, etc.
+          - **Pensión alimentaria** (pension): Y€ — cuota fija mensual
+          - **Total que desembolsas** (total_final): Z€ — la suma de todo lo anterior
+          *¿Quieres el detalle por año o por mes?*
+        - Al final, invita al usuario a afinar si lo desea.
+        - Si aún así la pregunta es completamente ambigua entre dos campos, muéstralos ambos con una explicación de la diferencia.
+        
         == CAMPOS DEL JSON ==
         - 'transferencia_naia': Lo que el padre transfiere por gastos compartidos ese mes (gastos/2).
         - 'total_gastos': Total bruto de gastos de Naia ese mes (lo que gasta ella en total, NOT lo que paga el padre).
