@@ -35,23 +35,24 @@ class AskAiUseCaseTest extends TestCase
     public function testExecuteWithoutApiKeyReturnsError()
     {
         // Temporarily unset API key for test
-        $oldKey = $_ENV['GEMINI_API_KEY'] ?? null;
-        $_ENV['GEMINI_API_KEY'] = '';
+        $oldKey = $_ENV['OPENAI_API_KEY'] ?? null;
+        $_ENV['OPENAI_API_KEY'] = '';
+        unset($_ENV['OPENAI_API_KEY']);
 
         $response = $this->useCase->execute("¿Cuánto he gastado?");
 
-        $this->assertStringContainsString("Error: La clave de la API de Gemini no está configurada", $response);
+        $this->assertStringContainsString("Error: La clave de la API de OpenAI no está configurada", $response);
 
         // Restore
         if ($oldKey !== null) {
-            $_ENV['GEMINI_API_KEY'] = $oldKey;
+            $_ENV['OPENAI_API_KEY'] = $oldKey;
         }
     }
 
     public function testExecuteCacheGeneration()
     {
         // Set fake API key so it passes the first check
-        $_ENV['GEMINI_API_KEY'] = 'test-fake-key';
+        $_ENV['OPENAI_API_KEY'] = 'test-fake-key';
 
         $this->expenseRepositoryMock->method('getAvailableYears')->willReturn([2024]);
 

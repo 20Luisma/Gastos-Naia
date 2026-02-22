@@ -17,10 +17,11 @@ class AskAiUseCase
 
     public function execute(string $question): string
     {
-        $apiKey = $_ENV['GEMINI_API_KEY'] ?? $_SERVER['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY') ?? '';
+        $apiKey = $_ENV['OPENAI_API_KEY'] ?? $_SERVER['OPENAI_API_KEY'] ?? getenv('OPENAI_API_KEY');
+        $apiKey = is_string($apiKey) ? $apiKey : '';
 
         if (empty($apiKey)) {
-            return "Error: La clave de la API de Gemini no está configurada. Por favor, añádela al archivo `.env`.";
+            return "Error: La clave de la API de OpenAI no está configurada. Por favor, añádela al archivo `.env` como `OPENAI_API_KEY`.";
         }
 
         // 1. Obtener TODOS los gastos históricos disponibles (con caché de 1h)
@@ -34,8 +35,6 @@ class AskAiUseCase
             $years = $this->expenseRepository->getAvailableYears();
             foreach ($years as $year) {
                 for ($month = 1; $month <= 12; $month++) {
-                    // Evitamos sobrecargar la API de Google de golpe con sleep si hiciera falta, 
-                    // de momento tiramos normal.
                     $expenses = $this->expenseRepository->getExpenses($year, $month);
                     foreach ($expenses as $expense) {
                         $allExpensesData[] = [
@@ -55,12 +54,11 @@ class AskAiUseCase
             file_put_contents($cacheFile, json_encode($allExpensesData, JSON_UNESCAPED_UNICODE));
         }
 
-        // Si no hay gastos, o son muchísimos (>5000) podríamos cortarlos, pero para Gastos Naia los mandamos todos
         $dataContext = json_encode($allExpensesData, JSON_UNESCAPED_UNICODE);
 
-        // 2. Construir el System Prompt Inteligente
-        $systemInstruction = "Eres un Asistente y Contador IA de nivel corporativo para la aplicación 'Gastos Naia'. 
-        Tu misión principal es analizar el historial de gastos del usuario y responder a sus consultas con una precisión impecable, un tono corporativo y profesional, y una presentación estructuralmente perfecta.
+        // 2. System Prompt Corporativo
+        $systemPrompt = "Eres un Asistente y Contador IA de nivel corporativo para la aplicación 'Gastos Naia'. 
+        Tu misión principal es analizar el historial de gastos del usuario y responder con una precisión impecable, un tono corporativo y profesional, y una presentación estructuralmente perfecta.
         
         REGLAS Y CAPACIDADES IMPORTANTES (RESPETA TODAS ESTRICTAMENTE):
         1. **Contexto Temporal:** Usa los campos 'year' (Año) y 'month' (Mes numérico) del JSON para filtrar y cruzar datos con precisión milimétrica cuando te pregunten por fechas.
@@ -69,73 +67,65 @@ class AskAiUseCase
         4. **Formato y Redacción Profesional (CRÍTICO):** 
            - Redacta como un alto ejecutivo financiero: educado, claro y yendo al grano.
            - Utiliza SIEMPRE formato Markdown rico. 
-           - **Deja abundante aire y doble salto de línea** entre párrafos y tablas para que la lectura sea relajada y no esté amontonada.
-           - Usa listas (`-` o `*`) para enumerar desgloses.
-           - Cualquier tabulación o matriz de datos DEBE mostrarse SIEMPRE como una tabla Markdown pura, con columnas bien definidas.
+           - Deja abundante aire y doble salto de línea entre párrafos y tablas.
+           - Usa listas (- o *) para enumerar desgloses.
+           - Cualquier tabulación DEBE mostrarse SIEMPRE como una tabla Markdown pura, con columnas bien definidas.
         5. **Foco Financiero:** Rechaza educadamente cualquier tema que no sea análisis de este historial de gastos.
         
         AQUÍ TIENES TODO EL HISTORIAL DE GASTOS EN JSON (year, month, date, desc, amount):
         " . $dataContext;
 
-        // 3. Preparar la llamada a la API de Google Gemini (gemini-2.5-flash)
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $apiKey;
+        // 3. Preparar la llamada a la API de OpenAI (gpt-4o-mini)
+        $url = 'https://api.openai.com/v1/chat/completions';
 
         $payload = [
-            "system_instruction" => [
-                "parts" => [
-                    ["text" => $systemInstruction]
-                ]
+            'model' => 'gpt-4o-mini',
+            'temperature' => 0.1,
+            'messages' => [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $question],
             ],
-            "contents" => [
-                [
-                    "role" => "user",
-                    "parts" => [
-                        ["text" => $question]
-                    ]
-                ]
-            ],
-            "generationConfig" => [
-                "temperature" => 0.1 // Baja temperatura para que sea analítico y preciso con los números
-            ]
         ];
 
-        // 4. Ejecutar la petición HTTP REST neta
+        // 4. Ejecutar la petición HTTP
         $options = [
             'http' => [
-                'header' => "Content-Type: application/json\r\n",
+                'header' => "Content-Type: application/json\r\nAuthorization: Bearer {$apiKey}\r\n",
                 'method' => 'POST',
                 'content' => json_encode($payload, JSON_UNESCAPED_UNICODE),
-                'timeout' => 30
+                'timeout' => 30,
             ]
         ];
 
         $context = stream_context_create($options);
-        // Suppress warnings so we can manually handle HTTP error codes
         $result = @file_get_contents($url, false, $context);
 
-        // Check headers explicitly for 429 Rate Limit
+        // Gestión de errores HTTP
         if (isset($http_response_header) && is_array($http_response_header)) {
             foreach ($http_response_header as $header) {
-                if (strpos($header, '429 Too Many Requests') !== false) {
-                    return "⏳ ¡Vaya! Has agotado las consultas gratuitas por minuto que nos impone Google Gemini. Espérate unos 60 segundos antes de volver a preguntarme algo.";
+                if (strpos($header, '429') !== false) {
+                    return "⏳ Has superado el límite de peticiones de OpenAI. Espera un momento y vuelve a intentarlo.";
+                }
+                if (strpos($header, '401') !== false) {
+                    return "❌ La clave de API de OpenAI no es válida o ha expirado. Revisa tu `OPENAI_API_KEY`.";
                 }
             }
         }
 
         if ($result === false) {
             $error = error_get_last();
-            return "Error de conexión con la IA de Google: " . ($error['message'] ?? 'Timeout');
+            return "Error de conexión con OpenAI: " . ($error['message'] ?? 'Timeout o conexión rechazada');
         }
 
         $response = json_decode($result, true);
 
         if (isset($response['error'])) {
-            return "Error de la API de Gemini (Código {$response['error']['code']}): {$response['error']['message']}";
+            return "Error de OpenAI ({$response['error']['type']}): {$response['error']['message']}";
         }
 
         // Extraer el texto generado
-        if (isset($response['candidates'][0]['content']['parts'][0]['text'])) {
-            return $response['candidates'][0]['content']['parts'][0]['text'];
+        if (isset($response['choices'][0]['message']['content'])) {
+            return $response['choices'][0]['message']['content'];
         }
 
         return "La IA no pudo generar una respuesta coherente.";
