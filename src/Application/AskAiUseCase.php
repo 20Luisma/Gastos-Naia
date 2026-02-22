@@ -54,22 +54,48 @@ class AskAiUseCase
 
         // ==============================================================
         // FEATURE: PRE-CÁLCULO EXACTO PARA EVITAR ALUCINACIÓN ARITMÉTICA
-        // Utilizamos el 'total_anual' absoluto proporcionado por Google Sheets (via Sync) 
-        // en lugar de sumar meses para evitar descuadres por rate limits.
         // ==============================================================
-        $totalHistoricoAbsoluto = 0.0;
+        $totalesAbsolutos = [
+            'total_final' => 0.0,
+            'total_gastos' => 0.0,
+            'transferencia_naia' => 0.0,
+            'pension' => 0.0
+        ];
+
         $totalesPorAno = [];
 
         foreach ($contextData as $yearObj) {
-            $sumaAno = isset($yearObj['total_anual']) ? (float) $yearObj['total_anual'] : 0.0;
-            $totalesPorAno[$yearObj['year']] = round($sumaAno, 2);
-            $totalHistoricoAbsoluto += $sumaAno;
+            $yearStr = (string) $yearObj['year'];
+            $sumaAno = [
+                'total_final' => isset($yearObj['total_anual']) ? (float) $yearObj['total_anual'] : 0.0,
+                'total_gastos' => 0.0,
+                'transferencia_naia' => 0.0,
+                'pension' => 0.0
+            ];
+
+            if (isset($yearObj['meses']) && is_array($yearObj['meses'])) {
+                foreach ($yearObj['meses'] as $mesObj) {
+                    $sumaAno['total_gastos'] += (float) ($mesObj['total_gastos'] ?? 0);
+                    $sumaAno['transferencia_naia'] += (float) ($mesObj['transferencia_naia'] ?? 0);
+                    $sumaAno['pension'] += (float) ($mesObj['pension'] ?? 0);
+                }
+            }
+
+            foreach (['total_final', 'total_gastos', 'transferencia_naia', 'pension'] as $k) {
+                $sumaAno[$k] = round($sumaAno[$k], 2);
+                $totalesAbsolutos[$k] += $sumaAno[$k];
+            }
+
+            $totalesPorAno[$yearStr] = $sumaAno;
         }
-        $totalHistoricoAbsoluto = round($totalHistoricoAbsoluto, 2);
+
+        foreach (['total_final', 'total_gastos', 'transferencia_naia', 'pension'] as $k) {
+            $totalesAbsolutos[$k] = round($totalesAbsolutos[$k], 2);
+        }
 
         $preCalculatedMetrics = [
-            'TOTAL_HISTORICO_ABSOLUTO (Suma real y exacta de todos los años juntos)' => $totalHistoricoAbsoluto,
-            'TOTAL_EXACTO_POR_AÑO' => $totalesPorAno
+            'SUMAS_HISTÓRICAS_ABSOLUTAS_DE_TODOS_LOS_AÑOS' => $totalesAbsolutos,
+            'SUMAS_TOTALES_POR_CADA_AÑO' => $totalesPorAno
         ];
 
         $dataContext = json_encode($contextData, JSON_UNESCAPED_UNICODE);
@@ -115,8 +141,9 @@ class AskAiUseCase
         - Para promedios multi-año: muestra el promedio anual (total_año / meses_con_datos_ese_año) y el promedio global.
         
         REGLA 3 — SUMAS CORRECTAS:
-        - **CRÍTICO: NO TENGAS ALUCINACIONES ARITMÉTICAS. USA EXCLUSIVAMENTE LOS PRE-CÁLCULOS EXACTOS DE LA SECCIÓN 'MÉTRICAS MATEMÁTICAS PRE-CALCULADAS'** para dar totales por año o el total histórico absoluto.
-        - NO intentes sumar tú los totales año por año para responder a gastos totales históricos. Usa el bloque de métricas pre-calculadas que ya es matemática pura.
+        - **PROHIBICIÓN ESTRICTA:** Tienes PROHIBIDO sumar mediante cálculo matemático los campos de meses individuales para responder totales anuales o totales históricos de cualquier campo.
+        - **OBLIGACIÓN:** Para dar totales históricos (la suma desde que hay registros hasta hoy) o sumas completas de años, TIENES QUE LEER LITERALMENTE LOS DATOS de la sección 'MÉTRICAS MATEMÁTICAS PRE-CALCULADAS'.
+        - Ahí tienes ya pre-sumados y calculados con 100% de precisión los acumulados históricos absolutos de 'total_gastos', 'pension', 'total_final', etc. ÚSALOS SIEMPRE.
         
         REGLA 4 — PENSIÓN:
         - El campo 'pension' es la pensión mensual de ese mes. Para el total anual de pensión: suma los valores de 'pension' de cada mes del año.
@@ -125,8 +152,8 @@ class AskAiUseCase
 
         == CAPACIDADES ANALÍTICAS — RESPONDE SIEMPRE ==
         
-        A) SUMAS Y TOTALES (cualquier rango de tiempo):
-           - Suma el campo correcto de todos los meses/años del rango. Muestra tabla por año con total.
+        A) SUMAS Y TOTALES HISTÓRICOS Y ANUALES:
+           - LEE directamente la sección 'MÉTRICAS MATEMÁTICAS PRE-CALCULADAS'. Muestra tabla por año extraída de ahí y muestra el Absoluto extraído de ahí. NUNCA SUMES TÚ.
         
         B) PROMEDIOS:
            - Suma el campo correcto de los meses con datos reales. Divide por el número de esos meses (no por meses totales del calendario).
