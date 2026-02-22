@@ -35,11 +35,15 @@ class AskAiUseCase
         // Flatten the Firebase Object "years" hashmap down to the chronological array GPT expects
         foreach ($fullContext['years'] as $yearStr => $yearData) {
             $mesesArray = [];
-            foreach ($yearData['meses'] as $monthStr => $mesData) {
-                $mesesArray[] = $mesData;
+            if (is_array($yearData['meses'])) {
+                foreach ($yearData['meses'] as $monthStr => $mesData) {
+                    if (is_array($mesData)) {
+                        $mesesArray[] = $mesData;
+                    }
+                }
             }
-            // Sort months to ensure chronological order despite JSON key hashing
-            usort($mesesArray, fn($a, $b) => $a['mes'] <=> $b['mes']);
+            // Sort months to ensure chronological order despite JSON key hashing, checking if keys exist safely
+            usort($mesesArray, fn($a, $b) => ($a['mes'] ?? 0) <=> ($b['mes'] ?? 0));
 
             $yearData['meses'] = $mesesArray;
             $contextData[] = $yearData;
