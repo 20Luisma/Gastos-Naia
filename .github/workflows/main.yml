@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  deploy:
+  test:
+    name: Run Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -18,8 +19,16 @@ jobs:
           curl -sS https://getcomposer.org/installer | php
           php composer.phar install --optimize-autoloader
 
-      - name: Run unit tests
+      - name: Run PHPUnit
         run: php composer.phar run test
+
+  deploy:
+    name: Deploy code to Hostinger
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
@@ -36,4 +45,5 @@ jobs:
           --exclude '.env' \
           --exclude 'config.php' \
           --exclude 'credentials' \
+          --exclude 'backups' \
           ./ ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:/home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia/
