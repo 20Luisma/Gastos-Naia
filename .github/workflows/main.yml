@@ -47,3 +47,11 @@ jobs:
           --exclude 'credentials' \
           --exclude 'backups' \
           ./ ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:/home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia/
+
+      - name: Install Composer dependencies on server
+        env:
+          SSHPASS: ${{ secrets.DEPLOY_SSH_PASS }}
+        run: |
+          sshpass -e ssh -p ${{ secrets.DEPLOY_SSH_PORT }} -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
+            "cd /home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia && composer install --no-dev --optimize-autoloader 2>&1"
