@@ -9,11 +9,13 @@ class EditExpenseUseCase
 {
     private ExpenseRepositoryInterface $expenseRepository;
     private \GastosNaia\Infrastructure\FirebaseBackupService $backupService;
+    private \GastosNaia\Infrastructure\FirebaseWriteRepository $firebaseWrite;
 
     public function __construct(ExpenseRepositoryInterface $expenseRepository, \GastosNaia\Infrastructure\FirebaseBackupService $backupService)
     {
         $this->expenseRepository = $expenseRepository;
         $this->backupService = $backupService;
+        $this->firebaseWrite = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
     }
 
     public function execute(int $year, int $month, int $row, string $date, string $description, float $amount): bool
@@ -31,11 +33,8 @@ class EditExpenseUseCase
                 'amount' => $expense->getAmount()
             ]);
 
-            // Invalidar caché de IA
-            $cacheFile = __DIR__ . '/../../backups/ai_cache.json';
-            if (file_exists($cacheFile)) {
-                @unlink($cacheFile);
-            }
+            // Sync specifically this year's index to Firebase Read Replica for AI
+            $this->firebaseWrite->syncYearFast($year, $this->expenseRepository);
         }
 
         return $success;

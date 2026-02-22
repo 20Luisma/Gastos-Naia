@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace GastosNaia\Application;
 
-use GastosNaia\Domain\ExpenseRepositoryInterface;
+use GastosNaia\Infrastructure\FirebaseReadRepository;
 
 class AskAiUseCase
 {
-    private ExpenseRepositoryInterface $expenseRepository;
+    private FirebaseReadRepository $firebase;
 
-    public function __construct(ExpenseRepositoryInterface $expenseRepository)
+    public function __construct(FirebaseReadRepository $firebase)
     {
-        $this->expenseRepository = $expenseRepository;
+        $this->firebase = $firebase;
     }
 
     public function execute(string $question): string
@@ -24,92 +24,29 @@ class AskAiUseCase
             return "Error: La clave de la API de OpenAI no está configurada. Por favor, añádela al archivo `.env` como `OPENAI_API_KEY`.";
         }
 
-        // 1. Obtener TODOS los datos (con caché de 1h)
-        $cacheFile = __DIR__ . '/../../backups/ai_cache.json';
-        $cacheTime = 3600; // 1 hora
-        $contextData = [];
+        // 1. Obtener contexto instantáneo de la Read Replica en Firebase (todo el histórico precalculado)
+        $fullContext = $this->firebase->getFullContext();
 
-        if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
-            $contextData = json_decode(file_get_contents($cacheFile), true);
-        } else {
-            $years = $this->expenseRepository->getAvailableYears();
-
-            // Annual grand totals (from "Total Final:" label in annual sheet — reliable)
-            $annualTotals = $this->expenseRepository->getAnnualTotals();
-            $annualByYear = [];
-            foreach ($annualTotals as $a) {
-                $annualByYear[$a['year']] = $a['total'];
-            }
-
-            foreach ($years as $year) {
-                // Monthly totals from the annual summary sheet (reliable for total_gastos)
-                $monthlyTotals = $this->expenseRepository->getMonthlyTotals($year);
-                $annualTotal = $annualByYear[$year] ?? 0.0;
-
-                $meses = [];
-                $lastKnownPension = 0.0;
-
-                // First pass: find the earliest known pension in the year to use as fallback for empty months
-                foreach ($monthlyTotals as $mt) {
-                    $summary = $this->expenseRepository->getMonthlyFinancialSummary($year, $mt['month']);
-                    if ($summary['pension'] > 0.0) {
-                        $lastKnownPension = $summary['pension'];
-                        break;
-                    }
-                }
-
-                foreach ($monthlyTotals as $mt) {
-                    $month = $mt['month'];
-                    $totalGastos = $mt['total'];
-                    $transferencia = $totalGastos > 0.0 ? round($totalGastos / 2, 2) : 0.0;
-
-                    // Get exact pension for THIS specific month (handles mid-year increases like in 2024)
-                    $summary = $this->expenseRepository->getMonthlyFinancialSummary($year, $month);
-                    $pension = $summary['pension'] > 0.0 ? $summary['pension'] : $lastKnownPension;
-                    if ($pension > 0.0) {
-                        $lastKnownPension = $pension; // keep updating fallback for future empty months
-                    }
-
-                    $totalFinal = round($transferencia + $pension, 2);
-
-                    // Individual expenses for detail queries
-                    $expenses = $this->expenseRepository->getExpenses($year, $month);
-                    $items = [];
-                    foreach ($expenses as $expense) {
-                        $items[] = [
-                            'date' => $expense->getDate(),
-                            'desc' => $expense->getDescription(),
-                            'amount' => $expense->getAmount(),
-                        ];
-                    }
-
-                    $meses[] = [
-                        'mes' => $month,
-                        'nombre' => $mt['name'],
-                        'total_gastos' => $totalGastos,
-                        'transferencia_naia' => $transferencia,
-                        'pension' => $pension,        // Exact pension for this month
-                        'total_final' => $totalFinal,
-                        'gastos' => $items,
-                    ];
-                }
-
-                if ($annualTotal > 0.0 || !empty(array_filter($meses, fn($m) => !empty($m['gastos'])))) {
-                    $contextData[] = [
-                        'year' => $year,
-                        'total_anual' => $annualTotal,
-                        'meses' => $meses,
-                    ];
-                }
-
-            }
-
-            // Guardar caché
-            if (!is_dir(dirname($cacheFile))) {
-                mkdir(dirname($cacheFile), 0777, true);
-            }
-            file_put_contents($cacheFile, json_encode($contextData, JSON_UNESCAPED_UNICODE));
+        if (!$fullContext || !isset($fullContext['years'])) {
+            return "Lo siento, la base de datos inteligente (Firebase) aún no ha sido sincronizada. Por favor, ejecuta la sincronización inicial.";
         }
+
+        $contextData = [];
+        // Flatten the Firebase Object "years" hashmap down to the chronological array GPT expects
+        foreach ($fullContext['years'] as $yearStr => $yearData) {
+            $mesesArray = [];
+            foreach ($yearData['meses'] as $monthStr => $mesData) {
+                $mesesArray[] = $mesData;
+            }
+            // Sort months to ensure chronological order despite JSON key hashing
+            usort($mesesArray, fn($a, $b) => $a['mes'] <=> $b['mes']);
+
+            $yearData['meses'] = $mesesArray;
+            $contextData[] = $yearData;
+        }
+
+        // Sort years chronologically
+        usort($contextData, fn($a, $b) => $a['year'] <=> $b['year']);
 
         $dataContext = json_encode($contextData, JSON_UNESCAPED_UNICODE);
 

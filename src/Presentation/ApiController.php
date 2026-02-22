@@ -52,7 +52,9 @@ class ApiController
         $this->deleteExpenseUseCase = new DeleteExpenseUseCase($this->expenseRepository, $firebaseService);
         $this->uploadReceiptUseCase = new UploadReceiptUseCase($this->receiptRepository);
         $this->deleteReceiptUseCase = new DeleteReceiptUseCase($this->receiptRepository, $firebaseService);
-        $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($this->expenseRepository);
+
+        $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
+        $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($firebaseReadRepo);
     }
 
     private function createGoogleClient(): Client

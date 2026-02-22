@@ -8,11 +8,13 @@ class DeleteExpenseUseCase
 {
     private ExpenseRepositoryInterface $expenseRepository;
     private \GastosNaia\Infrastructure\FirebaseBackupService $backupService;
+    private \GastosNaia\Infrastructure\FirebaseWriteRepository $firebaseWrite;
 
     public function __construct(ExpenseRepositoryInterface $expenseRepository, \GastosNaia\Infrastructure\FirebaseBackupService $backupService)
     {
         $this->expenseRepository = $expenseRepository;
         $this->backupService = $backupService;
+        $this->firebaseWrite = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
     }
 
     public function execute(int $year, int $month, int $row): bool
@@ -41,11 +43,8 @@ class DeleteExpenseUseCase
                 'amount' => $expenseToBackup->getAmount()
             ]);
 
-            // Invalidar caché de IA
-            $cacheFile = __DIR__ . '/../../backups/ai_cache.json';
-            if (file_exists($cacheFile)) {
-                @unlink($cacheFile);
-            }
+            // Sync specifically this year's index to Firebase Read Replica for AI
+            $this->firebaseWrite->syncYearFast($year, $this->expenseRepository);
         } elseif ($success) {
             // Backup fallback if exactly row wasn't matched but deleted
             $this->backupService->backupExpenseAction('DELETE', [
