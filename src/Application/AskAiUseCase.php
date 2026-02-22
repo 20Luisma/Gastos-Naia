@@ -46,24 +46,30 @@ class AskAiUseCase
                 $monthlyTotals = $this->expenseRepository->getMonthlyTotals($year);
                 $annualTotal = $annualByYear[$year] ?? 0.0;
 
-                // Read pension from the FIRST month that returns a non-zero pension value.
-                // IMPORTANT: months with 0 expenses still have pension paid (e.g. Jan 2021:
-                // 0 expenses but 204€ pension). So we must try ALL months, not just ones with expenses.
-                $pensionMensual = 0.0;
+                $meses = [];
+                $lastKnownPension = 0.0;
+
+                // First pass: find the earliest known pension in the year to use as fallback for empty months
                 foreach ($monthlyTotals as $mt) {
                     $summary = $this->expenseRepository->getMonthlyFinancialSummary($year, $mt['month']);
                     if ($summary['pension'] > 0.0) {
-                        $pensionMensual = $summary['pension'];
-                        break; // pension is the same all year — one month is enough
+                        $lastKnownPension = $summary['pension'];
+                        break;
                     }
                 }
 
-                $meses = [];
                 foreach ($monthlyTotals as $mt) {
                     $month = $mt['month'];
                     $totalGastos = $mt['total'];
                     $transferencia = $totalGastos > 0.0 ? round($totalGastos / 2, 2) : 0.0;
-                    $pension = $pensionMensual; // always paid, even months with 0 expenses
+
+                    // Get exact pension for THIS specific month (handles mid-year increases like in 2024)
+                    $summary = $this->expenseRepository->getMonthlyFinancialSummary($year, $month);
+                    $pension = $summary['pension'] > 0.0 ? $summary['pension'] : $lastKnownPension;
+                    if ($pension > 0.0) {
+                        $lastKnownPension = $pension; // keep updating fallback for future empty months
+                    }
+
                     $totalFinal = round($transferencia + $pension, 2);
 
                     // Individual expenses for detail queries
@@ -80,19 +86,18 @@ class AskAiUseCase
                     $meses[] = [
                         'mes' => $month,
                         'nombre' => $mt['name'],
-                        'total_gastos' => $totalGastos,    // Bruto de gastos de Naia
-                        'transferencia_naia' => $transferencia,  // 50% que pasa el padre
-                        'pension' => $pension,        // Pensión fija mensual
-                        'total_final' => $totalFinal,     // Total que paga el padre
-                        'gastos' => $items,          // Detalle individual
+                        'total_gastos' => $totalGastos,
+                        'transferencia_naia' => $transferencia,
+                        'pension' => $pension,        // Exact pension for this month
+                        'total_final' => $totalFinal,
+                        'gastos' => $items,
                     ];
                 }
 
                 if ($annualTotal > 0.0 || !empty(array_filter($meses, fn($m) => !empty($m['gastos'])))) {
                     $contextData[] = [
                         'year' => $year,
-                        'total_anual' => $annualTotal,   // Total Final del año (de la hoja anual)
-                        'pension_mensual' => $pensionMensual, // Pensión fija ese año
+                        'total_anual' => $annualTotal,
                         'meses' => $meses,
                     ];
                 }

@@ -96,6 +96,5 @@ class AskAiUseCaseTest extends TestCase
         $this->assertEquals(50.0, $cacheContent[0]['meses'][0]['transferencia_naia']); // 100/2
         $this->assertEquals('Comida', $cacheContent[0]['meses'][0]['gastos'][0]['desc']);
         $this->assertArrayHasKey('total_anual', $cacheContent[0]);
-        $this->assertArrayHasKey('pension_mensual', $cacheContent[0]);
     }
 }
