@@ -20,10 +20,29 @@ if (empty($dbUrl) || empty($secret)) {
     die("ERROR: Faltan FIREBASE_DATABASE_URL o FIREBASE_SECRET en .env\n");
 }
 
-echo "Empezando volcado de Google Sheets a Firebase...\n";
+echo "Empezando volcado ROBUSTO de Google Sheets a Firebase...\n";
+
+function safeRead($callable, $repo, $retries = 3)
+{
+    for ($i = 0; $i < $retries; $i++) {
+        $warningsBefore = count($repo->getWarnings());
+        $result = $callable();
+        $warningsAfter = count($repo->getWarnings());
+
+        if ($warningsAfter > $warningsBefore) {
+            echo "    [Warning] Falló lectura, esperando " . (5 * ($i + 1)) . " segundos y reintentando...\n";
+            sleep(5 * ($i + 1));
+        } else {
+            return $result;
+        }
+    }
+    return $callable(); // Last attempt
+}
 
 $years = $repo->getAvailableYears();
-$annualTotals = $repo->getAnnualTotals();
+$annualTotals = safeRead(fn() => $repo->getAnnualTotals(), $repo);
+sleep(1);
+
 $annualByYear = [];
 foreach ($annualTotals as $a) {
     $annualByYear[$a['year']] = $a['total'];
@@ -36,7 +55,9 @@ $firebaseData = [
 
 foreach ($years as $year) {
     echo "\nProcesando año $year...\n";
-    $monthlyTotals = $repo->getMonthlyTotals($year);
+    $monthlyTotals = safeRead(fn() => $repo->getMonthlyTotals($year), $repo);
+    sleep(1);
+
     $annualTotal = $annualByYear[$year] ?? 0.0;
 
     $mesesData = [];
@@ -45,7 +66,8 @@ foreach ($years as $year) {
     // Pass 1: find fallback pension
     foreach ($monthlyTotals as $mt) {
         if ($mt['total'] > 0.0) {
-            $summary = $repo->getMonthlyFinancialSummary($year, $mt['month']);
+            $summary = safeRead(fn() => $repo->getMonthlyFinancialSummary($year, $mt['month']), $repo);
+            sleep(1);
             if ($summary['pension'] > 0.0) {
                 $lastKnownPension = $summary['pension'];
                 break;
@@ -55,20 +77,19 @@ foreach ($years as $year) {
 
     foreach ($monthlyTotals as $mt) {
         $month = $mt['month'];
-        // Lo que leemos de "getMonthlyTotals" es la columna resumen, que el cliente llama "Total/2".
-        // Por lo tanto, el scraper está trayendo ya la mitad directamente de la celda de Sheets.
         $transferencia = $mt['total'];
         $totalGastos = $transferencia > 0.0 ? round($transferencia * 2, 2) : 0.0;
 
-        $summary = $repo->getMonthlyFinancialSummary($year, $month);
-        usleep(300000); // 300ms sleep for rate limit
+        echo "  - Leyendo mes $month...\n";
+        $summary = safeRead(fn() => $repo->getMonthlyFinancialSummary($year, $month), $repo);
+        sleep(1); // 1s sleep for rate limit
 
-        // Si el mes está completamente vacío (no reporta pensión ni transferencia, ej. un mes futuro),
-        // no debemos aplicarle la última pensión porque desvirtúa el total anual del año en curso.
-        if ($summary['pension'] == 0 && $transferencia == 0 && empty($repo->getExpenses($year, $month))) {
+        $expenses = safeRead(fn() => $repo->getExpenses($year, $month), $repo);
+        sleep(1); // 1s sleep for rate limit
+
+        if ($summary['pension'] == 0 && $transferencia == 0 && empty($expenses)) {
             $pension = 0.0;
         } else {
-            // Priority: Explicit month pension > Last known pension > 0
             if (isset($summary['pension']) && $summary['pension'] > 0.0) {
                 $pension = $summary['pension'];
             } else {
@@ -76,15 +97,11 @@ foreach ($years as $year) {
             }
         }
 
-        // Update lastKnownPension only if we saw a genuine >0 pension
         if ($pension > 0.0) {
             $lastKnownPension = $pension;
         }
 
         $totalFinal = round($transferencia + $pension, 2);
-
-        $expenses = $repo->getExpenses($year, $month);
-        usleep(300000); // 300ms sleep for rate limit
 
         $items = [];
         foreach ($expenses as $e) {
@@ -106,14 +123,11 @@ foreach ($years as $year) {
         ];
     }
 
-    // Only save year if it has any actual data
     if ($annualTotal > 0.0 || !empty(array_filter($mesesData, fn($m) => !empty($m['gastos'])))) {
-        // En Firebase evitaremos usar arrays secuenciales para los meses y años, 
-        // usaremos objetos con las keys (ej. "2024", "1") para evitar problemas de índices vacíos.
         $firebaseData['years'][(string) $year] = [
             'year' => $year,
             'total_anual' => $annualTotal,
-            'meses' => (object) $mesesData // Cast a object para obligar a que sea Diccionario en JSON JSON
+            'meses' => (object) $mesesData
         ];
         echo "  - Ok, guardados " . count($mesesData) . " meses.\n";
     } else {
@@ -136,5 +150,5 @@ $result = file_get_contents($url, false, $context);
 if ($result === false) {
     echo "ERROR: Falló subida a Firebase.\n";
 } else {
-    echo "¡ÉXITO! Base de datos de IA volcada a Firebase.\n";
+    echo "¡ÉXITO! Base de datos de IA volcada de forma ROBUSTA a Firebase.\n";
 }
