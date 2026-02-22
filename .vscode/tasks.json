@@ -1,0 +1,87 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🚀 Servidor local (puerto 8080)",
+            "type": "shell",
+            "command": "php -S localhost:8080",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "🧪 Ejecutar tests",
+            "type": "shell",
+            "command": "vendor/bin/phpunit --testdox",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📦 Push a main",
+            "type": "shell",
+            "command": "git add . && git commit -m \"${input:commitMessage}\" && git push origin main",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🌿 Crear rama feature",
+            "type": "shell",
+            "command": "git checkout -b feature/${input:branchName}",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔀 Merge feature → main",
+            "type": "shell",
+            "command": "git checkout main && git merge feature/${input:branchName} && git push origin main",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📥 composer install",
+            "type": "shell",
+            "command": "composer install",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "commitMessage",
+            "type": "promptString",
+            "description": "Mensaje del commit"
+        },
+        {
+            "id": "branchName",
+            "type": "promptString",
+            "description": "Nombre de la rama (sin 'feature/')"
+        }
+    ]
+}
