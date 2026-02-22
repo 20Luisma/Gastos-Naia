@@ -135,12 +135,14 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
         $spreadsheetId = $this->getSpreadsheetId($year);
         $sheetName = $this->config['months'][$month] ?? null;
 
+        $empty = ['total_gastos' => 0.0, 'transferencia_naia' => 0.0, 'pension' => 0.0, 'total_final' => 0.0];
+
         if (!$sheetName) {
-            return ['total_gastos' => 0.0, 'transferencia_naia' => 0.0, 'pension' => 0.0, 'total_final' => 0.0];
+            return $empty;
         }
 
-        // We read column E rows 11 to 16 (E11=total gastos, E14=total a pagar, E15=pension, E16=total final)
-        $range = "{$sheetName}!E11:E16";
+        // Scan columns D & E (rows 1–25) searching for labels — works regardless of exact row
+        $range = "{$sheetName}!D1:F25";
 
         try {
             $response = $this->sheets->spreadsheets_values->get(
@@ -148,24 +150,53 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
                 $range,
                 ['valueRenderOption' => 'UNFORMATTED_VALUE']
             );
-            $values = $response->getValues() ?? [];
+            $rows = $response->getValues() ?? [];
         } catch (\Exception $e) {
             $this->warnings[] = "Error leyendo resumen financiero {$sheetName} {$year}: " . $e->getMessage();
-            return ['total_gastos' => 0.0, 'transferencia_naia' => 0.0, 'pension' => 0.0, 'total_final' => 0.0];
+            return $empty;
         }
 
-        // E11 = row index 0, E12 = row index 1, E13 = row index 2, E14 = row index 3, E15 = row index 4, E16 = row index 5
-        $totalGastos = isset($values[0][0]) && is_numeric($values[0][0]) ? (float) $values[0][0] : 0.0;
-        $transferencia = isset($values[3][0]) && is_numeric($values[3][0]) ? (float) $values[3][0] : 0.0;
-        $pension = isset($values[4][0]) && is_numeric($values[4][0]) ? (float) $values[4][0] : 0.0;
-        $totalFinal = isset($values[5][0]) && is_numeric($values[5][0]) ? (float) $values[5][0] : 0.0;
+        $result = $empty;
 
-        return [
-            'total_gastos' => $totalGastos,     // E11: suma de todos los gastos del mes
-            'transferencia_naia' => $transferencia,   // E14: lo que se transfiere a Naia (total/2)
-            'pension' => $pension,          // E15: pensión alimentaria
-            'total_final' => $totalFinal,       // E16: total a pagar (transferencia + pensión)
-        ];
+        foreach ($rows as $row) {
+            // Each row may have [labelD, valueE, extraF] or just [labelD, valueE]
+            $label = is_string($row[0] ?? null) ? strtolower(trim($row[0])) : '';
+            $value = null;
+            // Look for a numeric value in column E (index 1) or F (index 2)
+            for ($c = 1; $c <= 2; $c++) {
+                if (isset($row[$c]) && is_numeric($row[$c]) && (float) $row[$c] > 0) {
+                    $value = (float) $row[$c];
+                    break;
+                }
+            }
+            if ($value === null)
+                continue;
+
+            // Match labels (flexible – any variation the user might have used)
+            if (str_contains($label, 'total a pagar') || str_contains($label, 'total/2') || str_contains($label, 'total /2')) {
+                $result['transferencia_naia'] = $value;
+            } elseif (str_contains($label, 'pensión') || str_contains($label, 'pension') || str_contains($label, 'pensio')) {
+                $result['pension'] = $value;
+            } elseif (str_contains($label, 'total final')) {
+                $result['total_final'] = $value;
+                // Also derive total_gastos = total_final * 2 - pension if not found yet
+            } elseif (str_contains($label, 'total') && !str_contains($label, 'final') && !str_contains($label, 'pagar')) {
+                // Generic "Total:" or "Total:" row → raw sum of expenses
+                $result['total_gastos'] = $value;
+            }
+        }
+
+        // If we couldn't find total_gastos explicitly, derive it from transferencia_naia * 2
+        if ($result['total_gastos'] === 0.0 && $result['transferencia_naia'] > 0.0) {
+            $result['total_gastos'] = round($result['transferencia_naia'] * 2, 2);
+        }
+
+        // Derive total_final if missing
+        if ($result['total_final'] === 0.0 && $result['transferencia_naia'] > 0.0) {
+            $result['total_final'] = round($result['transferencia_naia'] + $result['pension'], 2);
+        }
+
+        return $result;
     }
 
     public function addExpense(int $year, int $month, Expense $expense): bool
