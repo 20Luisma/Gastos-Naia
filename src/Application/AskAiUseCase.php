@@ -54,19 +54,14 @@ class AskAiUseCase
 
         // ==============================================================
         // FEATURE: PRE-CÁLCULO EXACTO PARA EVITAR ALUCINACIÓN ARITMÉTICA
+        // Utilizamos el 'total_anual' absoluto proporcionado por Google Sheets (via Sync) 
+        // en lugar de sumar meses para evitar descuadres por rate limits.
         // ==============================================================
         $totalHistoricoAbsoluto = 0.0;
         $totalesPorAno = [];
 
         foreach ($contextData as $yearObj) {
-            $sumaAno = 0.0;
-            if (isset($yearObj['meses']) && is_array($yearObj['meses'])) {
-                foreach ($yearObj['meses'] as $mesObj) {
-                    if (isset($mesObj['total_final']) && is_numeric($mesObj['total_final'])) {
-                        $sumaAno += (float) $mesObj['total_final'];
-                    }
-                }
-            }
+            $sumaAno = isset($yearObj['total_anual']) ? (float) $yearObj['total_anual'] : 0.0;
             $totalesPorAno[$yearObj['year']] = round($sumaAno, 2);
             $totalHistoricoAbsoluto += $sumaAno;
         }
