@@ -58,9 +58,9 @@
                 </button>
                 <button class="nav__btn" data-view="ai"
                     style="background: rgba(138, 43, 226, 0.2); border: 1px solid rgba(138, 43, 226, 0.5); color: #fff; margin-left: auto;"
-                    title="Asistente de Inteligencia Artificial">
+                    title="Agente IA Alfred">
                     <span class="nav__btn-icon">🤖</span>
-                    <span>Asistente IA</span>
+                    <span>AGENTE IA ALFRED</span>
                 </button>
             </nav>
         </div>
