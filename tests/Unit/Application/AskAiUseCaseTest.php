@@ -56,16 +56,23 @@ class AskAiUseCaseTest extends TestCase
 
         $this->expenseRepositoryMock->method('getAvailableYears')->willReturn([2024]);
 
-        // Mock getMonthlyFinancialSummary (new method)
-        $this->expenseRepositoryMock->method('getMonthlyFinancialSummary')
-            ->willReturnCallback(function ($year, $month) {
-                if ($year === 2024 && $month === 1) {
-                    return ['total_gastos' => 100.0, 'transferencia_naia' => 50.0, 'pension' => 238.0, 'total_final' => 288.0];
+        // Mock getAnnualTotals — returns the annual "Total Final" for each year
+        $this->expenseRepositoryMock->method('getAnnualTotals')
+            ->willReturn([['year' => 2024, 'total' => 3456.0]]);
+
+        // Mock getMonthlyTotals — returns list of monthly totals from the annual sheet
+        $this->expenseRepositoryMock->method('getMonthlyTotals')
+            ->willReturnCallback(function ($year) {
+                if ($year === 2024) {
+                    return [
+                        ['month' => 1, 'name' => 'Enero', 'total' => 100.0],
+                        ['month' => 2, 'name' => 'Febrero', 'total' => 0.0],
+                    ];
                 }
-                return ['total_gastos' => 0.0, 'transferencia_naia' => 0.0, 'pension' => 0.0, 'total_final' => 0.0];
+                return [];
             });
 
-        // Mock getExpenses to return 1 item when called for 2024 month 1
+        // Mock getExpenses — returns 1 item for January 2024
         $this->expenseRepositoryMock->method('getExpenses')
             ->willReturnCallback(function ($year, $month) {
                 if ($year === 2024 && $month === 1) {
@@ -74,7 +81,7 @@ class AskAiUseCaseTest extends TestCase
                 return [];
             });
 
-        // We expect it to try connecting to Gemini and fail (since it is a fake key/mock)
+        // We expect it to try connecting to OpenAI and fail (fake key),
         // BUT we want to assert that ai_cache.json was generated correctly first.
         $this->useCase->execute("Hola");
 
@@ -84,9 +91,11 @@ class AskAiUseCaseTest extends TestCase
         $this->assertIsArray($cacheContent);
         $this->assertCount(1, $cacheContent); // 1 year
         $this->assertEquals(2024, $cacheContent[0]['year']);
-        $this->assertCount(1, $cacheContent[0]['meses']); // only January has data
+        $this->assertCount(2, $cacheContent[0]['meses']); // January + February (both included)
         $this->assertEquals(1, $cacheContent[0]['meses'][0]['mes']);
-        $this->assertEquals(50.0, $cacheContent[0]['meses'][0]['transferencia_naia']);
+        $this->assertEquals(50.0, $cacheContent[0]['meses'][0]['transferencia_naia']); // 100/2
         $this->assertEquals('Comida', $cacheContent[0]['meses'][0]['gastos'][0]['desc']);
+        $this->assertArrayHasKey('total_anual', $cacheContent[0]);
+        $this->assertArrayHasKey('pension_mensual', $cacheContent[0]);
     }
 }

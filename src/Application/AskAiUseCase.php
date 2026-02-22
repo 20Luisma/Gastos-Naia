@@ -34,13 +34,41 @@ class AskAiUseCase
         } else {
             $years = $this->expenseRepository->getAvailableYears();
 
-            foreach ($years as $year) {
-                $meses = [];
-                for ($month = 1; $month <= 12; $month++) {
-                    // Resumen financiero oficial del mes (E11/E14/E15/E16 del sheet)
-                    $finSummary = $this->expenseRepository->getMonthlyFinancialSummary($year, $month);
+            // Annual totals (fiables — leen "Total Final:" de la hoja Gastos Anual)
+            $annualTotals = $this->expenseRepository->getAnnualTotals();
+            $annualByYear = [];
+            foreach ($annualTotals as $a) {
+                $annualByYear[$a['year']] = $a['total'];
+            }
 
-                    // Gastos individuales del mes para preguntas de detalle
+            foreach ($years as $year) {
+                // Monthly totals from annual summary sheet (fiables)
+                $monthlyTotals = $this->expenseRepository->getMonthlyTotals($year);
+
+                // Derivar pensión mensual:
+                // Total Final anual = Σ(transferencia + pension) para meses con datos
+                // pension_anual = annual_total - Σ(monthly_total / 2)
+                $annualTotal = $annualByYear[$year] ?? 0.0;
+                $sumTransferencias = 0.0;
+                $monthsWithData = 0;
+                foreach ($monthlyTotals as $mt) {
+                    if ($mt['total'] > 0.0) {
+                        $sumTransferencias += round($mt['total'] / 2, 2);
+                        $monthsWithData++;
+                    }
+                }
+                $pensionAnual = max(0.0, round($annualTotal - $sumTransferencias, 2));
+                $pensionMensual = $monthsWithData > 0 ? round($pensionAnual / $monthsWithData, 2) : 0.0;
+
+                $meses = [];
+                foreach ($monthlyTotals as $mt) {
+                    $month = $mt['month'];
+                    $totalGastos = $mt['total'];
+                    $transferencia = $totalGastos > 0.0 ? round($totalGastos / 2, 2) : 0.0;
+                    $pension = $totalGastos > 0.0 ? $pensionMensual : 0.0;
+                    $totalFinal = round($transferencia + $pension, 2);
+
+                    // Gastos individuales del mes
                     $expenses = $this->expenseRepository->getExpenses($year, $month);
                     $items = [];
                     foreach ($expenses as $expense) {
@@ -51,23 +79,22 @@ class AskAiUseCase
                         ];
                     }
 
-                    if (empty($items) && $finSummary['total_gastos'] === 0.0) {
-                        continue; // Skip empty months
-                    }
-
                     $meses[] = [
                         'mes' => $month,
-                        'total_gastos' => $finSummary['total_gastos'],       // E11: suma de gastos
-                        'transferencia_naia' => $finSummary['transferencia_naia'], // E14: lo que le paso a Naia
-                        'pension' => $finSummary['pension'],            // E15: pensión alimentaria
-                        'total_final' => $finSummary['total_final'],        // E16: total_a_pagar (E14+E15)
-                        'gastos' => $items,                            // detalle de cada gasto
+                        'nombre' => $mt['name'],
+                        'total_gastos' => $totalGastos,   // Bruto de gastos
+                        'transferencia_naia' => $transferencia, // Lo que pasa al 50%
+                        'pension' => $pension,       // Pensión mensual
+                        'total_final' => $totalFinal,    // Total que paga el padre
+                        'gastos' => $items,         // Detalle individual
                     ];
                 }
 
-                if (!empty($meses)) {
+                if ($annualTotal > 0.0 || !empty(array_filter($meses, fn($m) => !empty($m['gastos'])))) {
                     $contextData[] = [
                         'year' => $year,
+                        'total_anual' => $annualTotal,
+                        'pension_mensual' => $pensionMensual,
                         'meses' => $meses,
                     ];
                 }
@@ -116,14 +143,20 @@ class AskAiUseCase
         - '¿cuánto pago de pensión?' → USA 'pension'
         
         REGLA 2 — PROMEDIOS CORRECTOS:
-        - Divide por el TOTAL de meses del rango solicitado (ej. 2020-2026 = 7 años × 12 = 84 meses).
-        - Los meses sin datos en el JSON valen 0 para ese campo. NO los excluyas del denominador.
-        - Excepción: si el año está incompleto porque aún no han pasado esos meses (ej. 2026 solo tiene enero), divide por los meses reales del año corriente hasta la fecha.
+        - Cuenta exactamente los meses que aparecen en el JSON con total_final > 0 dentro del rango pedido.
+        - NUNCA uses años × 12 como denominador. 2026 puede tener solo 1 mes de datos — ese 1 mes es el denominador para 2026.
+        - Ejemplo: si 2020 tiene 9 meses y 2026 tiene 1 mes → divide la suma por esos meses reales (no por 84).
+        - Para promedios multi-año: muestra el promedio anual (total_año / meses_con_datos_ese_año) y el promedio global.
         
         REGLA 3 — SUMAS CORRECTAS:
-        - Suma todos los meses del rango. Los meses sin datos en JSON cuentan como 0.
-        - La suma es correcta aunque haya meses con 0.
+        - Suma todos los total_final de los meses con datos en el rango solicitado.
+        - Los meses que NO están en el JSON (futuro o sin datos) no cuentan ni en suma ni en denominador.
         
+        REGLA 4 — PENSIÓN:
+        - El campo 'pension' es la pensión mensual de ese mes. Para el total anual de pensión: suma los valores de 'pension' de cada mes del año.
+        - NUNCA restes pension de total_final (ya está incluida). total_final = transferencia_naia + pension.
+        
+
         == CAPACIDADES ANALÍTICAS — RESPONDE SIEMPRE ==
         
         A) SUMAS Y TOTALES (cualquier rango de tiempo):
