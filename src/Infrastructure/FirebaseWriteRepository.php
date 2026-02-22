@@ -67,7 +67,14 @@ class FirebaseWriteRepository
                 $totalGastos = $transferencia > 0.0 ? round($transferencia * 2, 2) : 0.0;
 
                 $summary = $repo->getMonthlyFinancialSummary($year, $month);
-                $pension = $summary['pension'] > 0.0 ? $summary['pension'] : $lastKnownPension;
+
+                // Si el mes está completamente vacío (no reporta pensión ni transferencia, ej. un mes futuro),
+                // no debemos aplicarle la última pensión porque desvirtúa el total anual del año en curso.
+                if ($summary['pension'] == 0 && $transferencia == 0 && empty($repo->getExpenses($year, $month))) {
+                    $pension = 0.0;
+                } else {
+                    $pension = $summary['pension'] > 0.0 ? $summary['pension'] : $lastKnownPension;
+                }
                 if ($pension > 0.0) {
                     $lastKnownPension = $pension;
                 }
