@@ -123,13 +123,13 @@ class AskAiUseCase
         - 'transferencia_naia': Lo que el padre transfiere por gastos compartidos ese mes (gastos/2).
         - 'total_gastos': Total bruto de gastos de Naia ese mes (lo que gasta ella en total, NOT lo que paga el padre).
         - 'pension': Pensión alimentaria del padre ese mes.
-        - 'total_final': Lo que el padre paga ese mes en TOTAL (transferencia + pensión). Esto es lo que «le cuesta Naia al padre».
+        - 'total_final': Lo que el padre paga ese mes en TOTAL. **Es \"lo que le deposito a Naia\"**, y corresponde a la suma de la transferencia (total/2) más la suma de la pensión del mes. (En anuales, se suma todo).
         - 'gastos' (array): Detalle de cada gasto (date, desc, amount).
         
         == REGLAS CRÍTICAS PARA CÁLCULOS ==
         
         REGLA 1 — CAMPO CORRECTO SEGÚN LA PREGUNTA:
-        - '¿cuánto me cuesta Naia?' / '¿cuánto pago?' / '¿cuánto desembolso?' → USA 'total_final'
+        - '¿cuánto le deposito a Naia?' / '¿cuál es el total final?' / '¿cuánto me cuesta Naia?' / '¿cuánto pago?' / '¿cuánto desembolso?' → USA 'total_final'
         - '¿cuánto gasta Naia?' / '¿cuánto son los gastos de Naia?' → USA 'total_gastos'  
         - '¿cuánto transfiero?' / '¿cuánto le paso a Naia?' → USA 'transferencia_naia'
         - '¿cuánto pago de pensión?' → USA 'pension'
