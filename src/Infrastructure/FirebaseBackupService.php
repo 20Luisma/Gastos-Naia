@@ -11,8 +11,11 @@ class FirebaseBackupService
 
     public function __construct()
     {
-        $this->databaseUrl = rtrim($_ENV['FIREBASE_DATABASE_URL'] ?? $_SERVER['FIREBASE_DATABASE_URL'] ?? getenv('FIREBASE_DATABASE_URL') ?? '', '/');
-        $this->secret = $_ENV['FIREBASE_SECRET'] ?? $_SERVER['FIREBASE_SECRET'] ?? getenv('FIREBASE_SECRET') ?? '';
+        $dbUrl = $_ENV['FIREBASE_DATABASE_URL'] ?? $_SERVER['FIREBASE_DATABASE_URL'] ?? getenv('FIREBASE_DATABASE_URL');
+        $this->databaseUrl = rtrim(is_string($dbUrl) ? $dbUrl : '', '/');
+
+        $sec = $_ENV['FIREBASE_SECRET'] ?? $_SERVER['FIREBASE_SECRET'] ?? getenv('FIREBASE_SECRET');
+        $this->secret = is_string($sec) ? $sec : '';
     }
 
     public function isConfigured(): bool
