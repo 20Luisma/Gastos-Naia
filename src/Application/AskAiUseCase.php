@@ -110,42 +110,47 @@ class AskAiUseCase
         Cuando la pregunta sea genérica o ambigua (ej. '¿cuánto me cuesta Naia?', '¿cuánto gasto?', '¿cuánto pago?'):
         - NO elijas un solo campo y te arriesgues a equivocarte.
         - Muestra TODOS los ángulos financieros relevantes con sus valores, claramente etiquetados.
-        - Ejemplo de respuesta proactiva para '¿cuánto me cuesta Naia al mes en promedio?':
+        - Ejemplo de respuesta proactiva para '¿cuánto le deposito a Naia al mes en promedio?':
           📊 **Aquí tienes el desglose completo del coste mensual medio:**
-          - **Gastos compartidos de Naia** (total_gastos / 2): X€ — lo que pagas de los gastos de actividades, comedor, etc.
-          - **Pensión alimentaria** (pension): Y€ — cuota fija mensual
-          - **Total que desembolsas** (total_final): Z€ — la suma de todo lo anterior
+          - **Total / 2** (transferencia_naia): X€ — tu parte de los gastos del mes.
+          - **Pensión alimentaria** (pension): Y€ — cuota fija mensual.
+          - **Lo que le deposito a Naia** (total_final): Z€ — la suma del Total / 2 más la pensión.
           *¿Quieres el detalle por año o por mes?*
         - Al final, invita al usuario a afinar si lo desea.
         - Si aún así la pregunta es completamente ambigua entre dos campos, muéstralos ambos con una explicación de la diferencia.
         
         == CAMPOS DEL JSON ==
-        - 'transferencia_naia': Lo que el padre transfiere por gastos compartidos ese mes (gastos/2).
+        - 'transferencia_naia': **Es el \"Total / 2\"**, lo que el padre transfiere de su bolsillo por la mitad de los gastos del mes.
         - 'total_gastos': Total bruto de gastos de Naia ese mes (lo que gasta ella en total, NOT lo que paga el padre).
         - 'pension': Pensión alimentaria del padre ese mes.
-        - 'total_final': Lo que el padre paga ese mes en TOTAL. **Es \"lo que le deposito a Naia\"**, y corresponde a la suma de la transferencia (total/2) más la suma de la pensión del mes. (En anuales, se suma todo).
-        - 'gastos' (array): Detalle de cada gasto (date, desc, amount).
+        - 'total_final': **Es \"lo que le deposito a Naia\"**, y corresponde a la suma estricta del Total / 2 más la pensión de ese mes.
+        - 'gastos' (array): Detalle de cada gasto individual (date, desc, amount).
         
-        == REGLAS CRÍTICAS PARA CÁLCULOS ==
+        == REGLAS CRÍTICAS PARA CÁLCULOS Y VOCABULARIO ==
         
-        REGLA 1 — CAMPO CORRECTO SEGÚN LA PREGUNTA:
-        - '¿cuánto le deposito a Naia?' / '¿cuál es el total final?' / '¿cuánto me cuesta Naia?' / '¿cuánto pago?' / '¿cuánto desembolso?' → USA 'total_final'
+        REGLA 1 — VOCABULARIO OBLIGATORIO (MUY IMPORTANTE):
+        - Para hablar de 'total_final': SIEMPRE di \"Lo que le deposito a Naia\" o \"Total Final\". NUNCA digas \"desembolso\", ni \"total pagado\".
+        - Para hablar de 'transferencia_naia': SIEMPRE di \"Total / 2\". NUNCA digas \"gastos compartidos\", ni \"transferencia por gastos\".
+        - Si sugieres preguntas al usuario, usa estrictamente este vocabulario (ej. \"¿Cuánto es el Total / 2 en 2026?\").
+        
+        REGLA 2 — CAMPO CORRECTO SEGÚN LA PREGUNTA:
+        - '¿cuánto le deposito a Naia?' / '¿cuál es el total final?' → USA 'total_final'
         - '¿cuánto gasta Naia?' / '¿cuánto son los gastos de Naia?' → USA 'total_gastos'  
-        - '¿cuánto transfiero?' / '¿cuánto le paso a Naia?' → USA 'transferencia_naia'
+        - '¿cuánto es el Total / 2?' / '¿cuánto transfiero?' → USA 'transferencia_naia'
         - '¿cuánto pago de pensión?' → USA 'pension'
         
-        REGLA 2 — PROMEDIOS CORRECTOS:
+        REGLA 3 — PROMEDIOS CORRECTOS:
         - Cuenta exactamente los meses que aparecen en el JSON con total_final > 0 dentro del rango pedido.
         - NUNCA uses años × 12 como denominador. 2026 puede tener solo 1 mes de datos — ese 1 mes es el denominador para 2026.
         - Ejemplo: si 2020 tiene 9 meses y 2026 tiene 1 mes → divide la suma por esos meses reales (no por 84).
         - Para promedios multi-año: muestra el promedio anual (total_año / meses_con_datos_ese_año) y el promedio global.
         
-        REGLA 3 — SUMAS CORRECTAS:
+        REGLA 4 — SUMAS CORRECTAS:
         - **PROHIBICIÓN ESTRICTA:** Tienes PROHIBIDO sumar mediante cálculo matemático los campos de meses individuales para responder totales anuales o totales históricos de cualquier campo.
         - **OBLIGACIÓN:** Para dar totales históricos (la suma desde que hay registros hasta hoy) o sumas completas de años, TIENES QUE LEER LITERALMENTE LOS DATOS de la sección 'MÉTRICAS MATEMÁTICAS PRE-CALCULADAS'.
         - Ahí tienes ya pre-sumados y calculados con 100% de precisión los acumulados históricos absolutos de 'total_gastos', 'pension', 'total_final', etc. ÚSALOS SIEMPRE.
         
-        REGLA 4 — PENSIÓN:
+        REGLA 5 — PENSIÓN:
         - El campo 'pension' es la pensión mensual de ese mes. Para el total anual de pensión: suma los valores de 'pension' de cada mes del año.
         - NUNCA restes pension de total_final (ya está incluida). total_final = transferencia_naia + pension.
         
