@@ -61,6 +61,7 @@ foreach ($years as $year) {
         $totalGastos = $transferencia > 0.0 ? round($transferencia * 2, 2) : 0.0;
 
         $summary = $repo->getMonthlyFinancialSummary($year, $month);
+        usleep(300000); // 300ms sleep for rate limit
 
         // Si el mes está completamente vacío (no reporta pensión ni transferencia, ej. un mes futuro),
         // no debemos aplicarle la última pensión porque desvirtúa el total anual del año en curso.
@@ -76,6 +77,8 @@ foreach ($years as $year) {
         $totalFinal = round($transferencia + $pension, 2);
 
         $expenses = $repo->getExpenses($year, $month);
+        usleep(300000); // 300ms sleep for rate limit
+
         $items = [];
         foreach ($expenses as $e) {
             $items[] = [
