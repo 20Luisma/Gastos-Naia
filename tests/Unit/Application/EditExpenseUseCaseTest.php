@@ -11,12 +11,14 @@ use PHPUnit\Framework\MockObject\MockObject;
 class EditExpenseUseCaseTest extends TestCase
 {
     private MockObject $repository;
+    private MockObject $backupService;
     private EditExpenseUseCase $useCase;
 
     protected function setUp(): void
     {
         $this->repository = $this->createMock(ExpenseRepositoryInterface::class);
-        $this->useCase = new EditExpenseUseCase($this->repository);
+        $this->backupService = $this->createMock(\GastosNaia\Infrastructure\FirebaseBackupService::class);
+        $this->useCase = new EditExpenseUseCase($this->repository, $this->backupService);
     }
 
     public function test_executes_edit_with_correct_expense(): void

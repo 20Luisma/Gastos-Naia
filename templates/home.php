@@ -52,10 +52,15 @@
                     <span>Resumen Anual</span>
                 </button>
                 <button class="nav__btn" id="btn-new-year" data-view="nuevo-anio"
-                    style="border: 1px dashed rgba(255,255,255,0.3); color: #fff; margin-left: 0.5rem;"
                     title="Crear un nuevo año automáticamente">
                     <span class="nav__btn-icon">✨</span>
                     <span>Nuevo Año</span>
+                </button>
+                <button class="nav__btn" data-view="ai"
+                    style="background: rgba(138, 43, 226, 0.2); border: 1px solid rgba(138, 43, 226, 0.5); color: #fff; margin-left: auto;"
+                    title="Asistente de Inteligencia Artificial">
+                    <span class="nav__btn-icon">🤖</span>
+                    <span>Asistente IA</span>
                 </button>
             </nav>
         </div>
@@ -337,6 +342,39 @@
             </section>
 
 
+            <!-- ═══ Vista: Asistente IA ═══ -->
+            <section id="view-ai" class="view" style="display:none;" data-view="ai">
+                <div class="card"
+                    style="max-width: 800px; margin: 0 auto; height: 75vh; display: flex; flex-direction: column;">
+                    <div class="card__header"
+                        style="flex-shrink: 0; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+                        <span class="card__icon">🤖</span>
+                        <h2 class="card__title">Asistente IA Contable</h2>
+                    </div>
+
+                    <div class="ai-panel__messages" id="ai-messages" style="flex-grow: 1; margin: 1rem 0;">
+                        <div class="ai-msg ai-msg--system">
+                            ¡Hola! Soy tu asistente inteligente. Conozco todo tu historial de gastos. Pregúntame sobre
+                            resúmenes,
+                            comparativas o pídemelo en formato email. Mis respuestas ahora son mucho más detalladas y
+                            profesionales.
+                        </div>
+                    </div>
+
+                    <div class="ai-panel__input-area"
+                        style="flex-shrink: 0; border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <form id="ai-form" class="ai-panel__form">
+                            <textarea id="ai-input" placeholder="Pregunta sobre gastos de 2021, comparativas..."
+                                rows="3" required></textarea>
+                            <button type="submit" class="btn btn--primary ai-submit" id="ai-submit-btn">
+                                <span class="ai-submit-text">Enviar Consulta</span>
+                                <span class="ai-submit-loader" hidden>⏳</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
         <!-- Footer -->
@@ -345,7 +383,7 @@
         </footer>
     </div>
 
-    <script src="public/assets/app.js?v=1.7"></script>
+    <script src="public/assets/app.js?v=4.0"></script>
 </body>
 
 </html>

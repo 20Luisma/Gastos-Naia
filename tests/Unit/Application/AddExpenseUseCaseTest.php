@@ -11,12 +11,14 @@ use PHPUnit\Framework\MockObject\MockObject;
 class AddExpenseUseCaseTest extends TestCase
 {
     private MockObject $repository;
+    private MockObject $backupService;
     private AddExpenseUseCase $useCase;
 
     protected function setUp(): void
     {
         $this->repository = $this->createMock(ExpenseRepositoryInterface::class);
-        $this->useCase = new AddExpenseUseCase($this->repository);
+        $this->backupService = $this->createMock(\GastosNaia\Infrastructure\FirebaseBackupService::class);
+        $this->useCase = new AddExpenseUseCase($this->repository, $this->backupService);
     }
 
     public function test_executes_successfully_and_returns_true(): void

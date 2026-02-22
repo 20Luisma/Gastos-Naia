@@ -19,6 +19,8 @@
 
 - 📊 **Visualización de gastos** por mes y año con gráficos interactivos (Chart.js)
 - 🔄 **Sincronización automática** con Google Sheets vía Google Sheets API
+- 🤖 **Asistente Contable IA** integrado con Gemini 2.5 Flash, capaz de razonar sobre todo tu histórico y generar resúmenes en formato Markdown.
+- 💾 **Backups en Tiempo Real** mediante Firebase Realtime Database para tener siempre una copia de seguridad en la nube independiente de Google Sheets.
 - 📁 **Gestión de documentos** integrada con Google Drive
 - 📅 **Multi-año** — soporte desde 2020 hasta el año actual
 - 🚀 **CI/CD automático** — deploy a Hostinger con cada push a `main`
@@ -31,16 +33,17 @@
 ```
 GastosNaia/
 ├── public/               # Entry point público (index.php + assets)
-│   └── assets/           # CSS y JS del frontend
+│   └── assets/           # CSS y JS del frontend (incluye parseador Markdown IA)
 ├── src/                  # Código fuente (PSR-4 autoload)
-│   ├── Application/      # Casos de uso
+│   ├── Application/      # Casos de uso (AskAiUseCase, FirebaseBackupService)
 │   ├── Domain/           # Entidades y repositorios
-│   ├── Infrastructure/   # Google Sheets / Drive adapters
+│   ├── Infrastructure/   # Adapters de Google Sheets, Firebase y Drive
 │   └── Presentation/     # Controlador HTTP (ApiController)
+├── backups/              # ⚡ Caché efímero para IA (ai_cache.json)
 ├── templates/            # Plantillas HTML
 ├── credentials/          # 🔒 Service Account JSON (no en git)
 ├── config.php            # 🔒 Configuración (no en git)
-├── .env                  # 🔒 Variables de entorno (no en git)
+├── .env                  # 🔒 Variables de entorno (Firebase, Gemini)
 └── .github/workflows/    # CI/CD pipeline
     └── main.yml
 ```
@@ -88,7 +91,7 @@ composer install
 
 # 3. Configurar variables de entorno
 cp .env.example .env
-# → Editar .env con tus credenciales de Google OAuth
+# → Editar .env con tus credenciales de Gemini, Firebase y Google OAuth
 
 # 4. Añadir el Service Account
 # → Copiar el JSON en: credentials/service-account.json
@@ -104,9 +107,12 @@ cp .env.example .env
 - **PHP 8.0+**
 - **Composer**
 - **Google Cloud Project** con:
-  - Google Sheets API habilitada
-  - Google Drive API habilitada
+  - Google Sheets API y Google Drive API habilitadas
   - Service Account con acceso a las hojas
+- **Firebase Project**:
+  - Realtime Database URL y Secret Key habilitados.
+- **Google AI Studio**:
+  - API Key de Gemini habilitada para el asistente.
 - **Cuenta Hostinger** (para producción)
 
 ---
@@ -116,7 +122,8 @@ cp .env.example .env
 | Paquete | Versión | Uso |
 |---------|---------|-----|
 | `google/apiclient` | ^2.15 | Google Sheets & Drive API |
-| `vlucas/phpdotenv` | ^5.6 | Variables de entorno |
+| `vlucas/phpdotenv` | ^5.6 | Variables de entorno (.env) |
+| `guzzlehttp/guzzle` | ^7.0 | Peticiones HTTP para Gemini y Firebase |
 
 ---
 
@@ -124,13 +131,14 @@ cp .env.example .env
 
 Los siguientes archivos están **excluidos del repositorio** y del deploy automático:
 
-- `.env` — credenciales OAuth y SSH
+- `.env` — credenciales (Gemini AI, Firebase Secret)
 - `config.php` — IDs de Spreadsheets y configuración
 - `credentials/` — Service Account JSON
 - `vendor/` — dependencias de Composer
+- `backups/` — caché en vivo generada por la IA
 
 ---
 
 <div align="center">
-Hecho con ❤️ para Naia · Sincronizado con Google Sheets
+Hecho con ❤️ para Naia · Sincronizado con Google Sheets, Firebase y Gemini AI
 </div>

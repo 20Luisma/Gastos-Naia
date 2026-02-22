@@ -116,6 +116,7 @@
         mensual: document.getElementById('view-mensual'),
         gastos: document.getElementById('view-gastos'),
         'nuevo-anio': document.getElementById('section-nuevo-anio'),
+        ai: document.getElementById('view-ai'),
     };
 
     function switchView(name) {
@@ -826,5 +827,131 @@
             });
         }
     });
+
+    // ──────────────────────────────────────────────
+    //  AI Assistant Panel (Embedded View)
+    // ──────────────────────────────────────────────
+
+    const $aiForm = document.getElementById('ai-form');
+    const $aiInput = document.getElementById('ai-input');
+    const $aiMessages = document.getElementById('ai-messages');
+    const $aiSubmitBtn = document.getElementById('ai-submit-btn');
+    const $aiSubmitText = $aiSubmitBtn?.querySelector('.ai-submit-text');
+    const $aiSubmitLoader = $aiSubmitBtn?.querySelector('.ai-submit-loader');
+
+    // Clean AI chat when navigating to this view if desired? For now, we keep the chat alive while session is open.
+    // Opcional: escuchar los cambios de vista si se quiere hacer algo al entrar en la IA.
+
+    // Simple Markdown to HTML parser for Gemini responses
+    function parseMarkdown(text) {
+        let html = text;
+        // Bold
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Italic
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        // Lists (simple)
+        html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+        html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+        // Tables (basic support for Gemini tables "| header | header |\n|---|---|")
+        if (html.includes('|---|') || html.includes('| --- |')) {
+            const rows = html.split('\n');
+            let inTable = false;
+            let tableHtml = '<div style="overflow-x:auto;"><table>';
+            let parsedHtml = '';
+
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i].trim();
+                if (row.startsWith('|') && row.endsWith('|')) {
+                    if (row.includes('|---|') || row.includes('| --- |')) continue; // Skip separator
+
+                    if (!inTable) { inTable = true; }
+
+                    const cells = row.split('|').filter(c => c.trim() !== '');
+                    tableHtml += '<tr>';
+                    cells.forEach(cell => {
+                        const tag = i === 0 || rows[i - 1].includes('|---|') ? 'th' : 'td';
+                        tableHtml += `<${tag}>${cell.trim()}</${tag}>`;
+                    });
+                    tableHtml += '</tr>';
+                } else {
+                    if (inTable) {
+                        inTable = false;
+                        tableHtml += '</table></div>';
+                        parsedHtml += tableHtml + '\n';
+                        tableHtml = '<div style="overflow-x:auto;"><table>'; // reset if multiple tables
+                    }
+                    parsedHtml += row + '\n';
+                }
+            }
+            if (inTable) { parsedHtml += tableHtml + '</table></div>'; }
+            html = parsedHtml;
+        }
+
+        // Paragraphs
+        html = html.split('\n\n').map(p => {
+            if (p.trim().startsWith('<ul') || p.trim().startsWith('<div')) return p;
+            return `<p>${p}</p>`;
+        }).join('');
+
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+
+        return html;
+    }
+
+    function addChatMessage(text, sender = 'user') {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `ai-msg ai-msg--${sender}`;
+
+        if (sender === 'system') {
+            msgDiv.innerHTML = parseMarkdown(text);
+        } else {
+            msgDiv.textContent = text;
+        }
+
+        $aiMessages.appendChild(msgDiv);
+        $aiMessages.scrollTop = $aiMessages.scrollHeight;
+    }
+
+    if ($aiForm) {
+        $aiForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = $aiInput.value.trim();
+            if (!question) return;
+
+            // UI Loading state
+            addChatMessage(question, 'user');
+            $aiInput.value = '';
+            $aiSubmitBtn.disabled = true;
+            $aiSubmitText.setAttribute('hidden', '');
+            $aiSubmitLoader.classList.add('is-loading');
+            $aiSubmitLoader.removeAttribute('hidden');
+
+            try {
+                const res = await apiPost('ai_ask', { question });
+                addChatMessage(res.answer || 'No hubo respuesta', 'system');
+            } catch (err) {
+                addChatMessage('❌ Error de conexión con la IA: ' + err.message, 'system');
+            } finally {
+                $aiSubmitBtn.disabled = false;
+                $aiSubmitText.removeAttribute('hidden');
+                $aiSubmitLoader.classList.remove('is-loading');
+                $aiSubmitLoader.setAttribute('hidden', '');
+                $aiInput.focus();
+            }
+        });
+
+        // Enter to submit
+        $aiInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!$aiSubmitBtn.disabled) {
+                    $aiForm.dispatchEvent(new Event('submit'));
+                }
+            }
+        });
+    }
 
 })();

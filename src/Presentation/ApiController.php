@@ -27,6 +27,7 @@ class ApiController
     private DeleteExpenseUseCase $deleteExpenseUseCase;
     private UploadReceiptUseCase $uploadReceiptUseCase;
     private DeleteReceiptUseCase $deleteReceiptUseCase;
+    private \GastosNaia\Application\AskAiUseCase $askAiUseCase;
 
     // Repositories
     private CachedExpenseRepository $expenseRepository;
@@ -43,12 +44,15 @@ class ApiController
         $this->expenseRepository = new CachedExpenseRepository($rawRepository, $cache);
         $this->receiptRepository = new GoogleDriveReceiptRepository($client, $config);
 
+        $firebaseService = new \GastosNaia\Infrastructure\FirebaseBackupService();
+
         $this->getExpensesUseCase = new GetExpensesUseCase($this->expenseRepository, $this->receiptRepository);
-        $this->addExpenseUseCase = new AddExpenseUseCase($this->expenseRepository);
-        $this->editExpenseUseCase = new EditExpenseUseCase($this->expenseRepository);
-        $this->deleteExpenseUseCase = new DeleteExpenseUseCase($this->expenseRepository);
+        $this->addExpenseUseCase = new AddExpenseUseCase($this->expenseRepository, $firebaseService);
+        $this->editExpenseUseCase = new EditExpenseUseCase($this->expenseRepository, $firebaseService);
+        $this->deleteExpenseUseCase = new DeleteExpenseUseCase($this->expenseRepository, $firebaseService);
         $this->uploadReceiptUseCase = new UploadReceiptUseCase($this->receiptRepository);
-        $this->deleteReceiptUseCase = new DeleteReceiptUseCase($this->receiptRepository);
+        $this->deleteReceiptUseCase = new DeleteReceiptUseCase($this->receiptRepository, $firebaseService);
+        $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($this->expenseRepository);
     }
 
     private function createGoogleClient(): Client
@@ -128,6 +132,19 @@ class ApiController
                         'files' => $result['files'],
                         'warnings' => $result['warnings'],
                     ]);
+                    break;
+
+                case 'ai_ask':
+                    $this->requirePost();
+                    // Aumentamos el límite de tiempo de PHP porque la IA puede tardar +30s en generar texto largo o analizar mucho contexto
+                    set_time_limit(120);
+                    $input = $this->getJsonInput();
+                    $question = $input['question'] ?? '';
+                    if (empty($question)) {
+                        throw new \Exception('La pregunta no puede estar vacía.');
+                    }
+                    $answer = $this->askAiUseCase->execute($question);
+                    $this->jsonResponse(['answer' => $answer]);
                     break;
 
                 case 'add':
