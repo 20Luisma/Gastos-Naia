@@ -103,13 +103,13 @@ class AskAiUseCase
         - '¿cuánto pago de pensión?' → USA 'pension'
         
         REGLA 2 — PROMEDIOS CORRECTOS:
-        - Para calcular el promedio mensual, SOLO cuenta los meses que tienen datos reales (total_final > 0).
-        - NUNCA dividas por meses vacíos ni por años completos si el año tiene meses sin datos.
-        - Ejemplo correcto: si solo tienes datos de 9 meses en 2020 y 12 en 2021, el promedio se calcula dividiendo por 21 (no por 24).
+        - Divide por el TOTAL de meses del rango solicitado (ej. 2020-2026 = 7 años × 12 = 84 meses).
+        - Los meses sin datos en el JSON valen 0 para ese campo. NO los excluyas del denominador.
+        - Excepción: si el año está incompleto porque aún no han pasado esos meses (ej. 2026 solo tiene enero), divide por los meses reales del año corriente hasta la fecha.
         
         REGLA 3 — SUMAS CORRECTAS:
-        - Suma únicamente los valores no-cero de los meses disponibles.
-        - Si un mes tiene total_final = 0, omítelo de la suma Y del conteo del denominador.
+        - Suma todos los meses del rango. Los meses sin datos en JSON cuentan como 0.
+        - La suma es correcta aunque haya meses con 0.
         
         == CAPACIDADES ANALÍTICAS — RESPONDE SIEMPRE ==
         
