@@ -172,9 +172,18 @@
 
                 <!-- Formulario añadir/editar gasto -->
                 <div class="card" id="add-expense-card">
-                    <div class="card__header">
-                        <span class="card__icon" id="form-icon">➕</span>
-                        <h2 class="card__title" id="form-title">Añadir Gasto</h2>
+                    <div class="card__header"
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="card__icon" id="form-icon">➕</span>
+                            <h2 class="card__title" id="form-title" style="margin: 0;">Añadir Gasto</h2>
+                        </div>
+                        <button type="button" class="btn btn--secondary" id="btn-ocr-scan"
+                            style="font-size: 0.85rem; padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%); color: white; border: none;">
+                            ✨ Autocompletar con Recibo
+                        </button>
+                        <input type="file" id="input-ocr-file"
+                            accept="image/jpeg, image/png, image/webp, application/pdf" style="display:none;">
                     </div>
                     <form id="form-add-expense" class="form">
                         <input type="hidden" id="input-row" value="">
@@ -284,6 +293,22 @@
                         </div>
                     </div>
 
+                    <!-- NUEVO: Bloque de Pensión Alimenticia Editable -->
+                    <div
+                        style="margin-top: 0.5rem; padding: 1rem 1.2rem; border-radius: var(--radius-sm); background: rgba(0, 196, 179, 0.1); border: 1px dashed rgba(0, 196, 179, 0.4); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <span class="summary-row__label" style="color: #00c4b3; font-size: 0.85rem;">Pensión
+                            Alimenticia</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" id="input-pension" step="0.01" min="0" placeholder="0.00"
+                                style="width: 100px; padding: 0.4rem; font-size: 1.1rem; text-align: right; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;">
+                            <span style="color: #00c4b3; font-size: 1.1rem; margin-right: 0.5rem;">€</span>
+                            <button type="button" class="btn" id="btn-save-pension" title="Guardar Pensión"
+                                style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background-color: #00c4b3; color: #fff; border: none; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                                <span>💾</span> Guardar
+                            </button>
+                        </div>
+                    </div>
+
                     <div style="margin-top: 1rem;">
                         <button type="button" class="btn btn--secondary" id="btn-send-email"
                             style="width: 100%; display: flex; justify-content: center; gap: 0.5rem; align-items: center; border-color: rgba(255,255,255,0.1);">
@@ -383,7 +408,7 @@
         </footer>
     </div>
 
-    <script src="public/assets/app.js?v=4.0"></script>
+    <script src="public/assets/app.js?v=4.2"></script>
 </body>
 
 </html>

@@ -21,11 +21,13 @@ class GetExpensesUseCase
         $expenses = $this->expenseRepository->getExpenses($year, $month);
         $files = $this->receiptRepository->listReceipts($year, $month);
         $warnings = $this->expenseRepository->getWarnings();
+        $summary = $this->expenseRepository->getMonthlyFinancialSummary($year, $month);
 
         return [
             'expenses' => $expenses,
             'files' => $files,
-            'warnings' => $warnings
+            'warnings' => $warnings,
+            'summary' => $summary
         ];
     }
 }

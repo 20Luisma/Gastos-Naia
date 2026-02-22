@@ -35,6 +35,8 @@ interface ExpenseRepositoryInterface
 
     public function deleteExpense(int $year, int $month, int $row): bool;
 
+    public function setPension(int $year, int $month, float $amount): bool;
+
     /**
      * @return int[]
      */

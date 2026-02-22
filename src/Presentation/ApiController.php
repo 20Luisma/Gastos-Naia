@@ -8,6 +8,7 @@ use GastosNaia\Application\DeleteReceiptUseCase;
 use GastosNaia\Application\EditExpenseUseCase;
 use GastosNaia\Application\GetExpensesUseCase;
 use GastosNaia\Application\UploadReceiptUseCase;
+use GastosNaia\Application\SetPensionUseCase;
 use GastosNaia\Infrastructure\CachedExpenseRepository;
 use GastosNaia\Infrastructure\FileCache;
 use GastosNaia\Infrastructure\GoogleDriveReceiptRepository;
@@ -27,7 +28,9 @@ class ApiController
     private DeleteExpenseUseCase $deleteExpenseUseCase;
     private UploadReceiptUseCase $uploadReceiptUseCase;
     private DeleteReceiptUseCase $deleteReceiptUseCase;
+    private SetPensionUseCase $setPensionUseCase;
     private \GastosNaia\Application\AskAiUseCase $askAiUseCase;
+    private \GastosNaia\Application\ScanReceiptUseCase $scanReceiptUseCase;
 
     // Repositories
     private CachedExpenseRepository $expenseRepository;
@@ -53,8 +56,13 @@ class ApiController
         $this->uploadReceiptUseCase = new UploadReceiptUseCase($this->receiptRepository);
         $this->deleteReceiptUseCase = new DeleteReceiptUseCase($this->receiptRepository, $firebaseService);
 
+        $firebaseWriteRepo = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
+        $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
+
         $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
         $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($firebaseReadRepo);
+
+        $this->scanReceiptUseCase = new \GastosNaia\Application\ScanReceiptUseCase();
     }
 
     private function createGoogleClient(): Client
@@ -133,6 +141,7 @@ class ApiController
                         'expenses' => $result['expenses'],
                         'files' => $result['files'],
                         'warnings' => $result['warnings'],
+                        'summary' => $result['summary'],
                     ]);
                     break;
 
@@ -185,6 +194,32 @@ class ApiController
                         (int) $input['row']
                     );
                     $this->jsonResponse(['success' => $success]);
+                    break;
+
+                case 'set_pension':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    if (!isset($input['year']) || !isset($input['month']) || !isset($input['amount'])) {
+                        throw new \Exception('Año, mes e importe son obligatorios.');
+                    }
+                    $success = $this->setPensionUseCase->execute(
+                        (int) $input['year'],
+                        (int) $input['month'],
+                        (float) $input['amount']
+                    );
+                    $this->jsonResponse(['success' => $success]);
+                    break;
+
+                case 'scan_receipt':
+                    $this->requirePost();
+                    if (empty($_FILES['file'])) {
+                        throw new \Exception('No se recibió ningún archivo para escanear.');
+                    }
+                    $tmpPath = $_FILES['file']['tmp_name'];
+                    $mimeType = mime_content_type($tmpPath) ?: 'application/octet-stream';
+
+                    $data = $this->scanReceiptUseCase->execute($tmpPath, $mimeType);
+                    $this->jsonResponse($data);
                     break;
 
                 case 'upload':

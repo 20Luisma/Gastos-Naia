@@ -68,8 +68,15 @@ foreach ($years as $year) {
         if ($summary['pension'] == 0 && $transferencia == 0 && empty($repo->getExpenses($year, $month))) {
             $pension = 0.0;
         } else {
-            $pension = $summary['pension'] > 0.0 ? $summary['pension'] : $lastKnownPension;
+            // Priority: Explicit month pension > Last known pension > 0
+            if (isset($summary['pension']) && $summary['pension'] > 0.0) {
+                $pension = $summary['pension'];
+            } else {
+                $pension = $lastKnownPension;
+            }
         }
+
+        // Update lastKnownPension only if we saw a genuine >0 pension
         if ($pension > 0.0) {
             $lastKnownPension = $pension;
         }

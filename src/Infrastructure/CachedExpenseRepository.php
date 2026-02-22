@@ -121,6 +121,18 @@ class CachedExpenseRepository implements ExpenseRepositoryInterface
         return $result;
     }
 
+    public function setPension(int $year, int $month, float $amount): bool
+    {
+        $result = $this->inner->setPension($year, $month, $amount);
+
+        if ($result) {
+            $this->invalidateForYear($year, $month);
+            $this->cache->invalidate("monthly_financial_{$year}_{$month}");
+        }
+
+        return $result;
+    }
+
     public function getAvailableYears(): array
     {
         $key = 'available_years';

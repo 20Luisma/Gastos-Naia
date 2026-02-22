@@ -93,6 +93,13 @@
         return json;
     }
 
+    async function apiOcrUpload(formData) {
+        const res = await fetch('?action=scan_receipt', { method: 'POST', body: formData });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        return json;
+    }
+
     // ──────────────────────────────────────────────
     //  Loading / Error
     // ──────────────────────────────────────────────
@@ -283,6 +290,12 @@
             renderExpensesTable(data.expenses);
             renderFilesList(data.files, year, month);
 
+            // Poblar campo de pensión
+            const pensionInput = document.getElementById('input-pension');
+            if (pensionInput && data.summary) {
+                pensionInput.value = data.summary.pension || '';
+            }
+
             // Set default date for expense form
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('input-date').value = today;
@@ -447,8 +460,60 @@
     }
 
     // ──────────────────────────────────────────────
+    // ──────────────────────────────────────────────
     //  Añadir / Editar Gasto
     // ──────────────────────────────────────────────
+
+    const $btnOcrScan = document.getElementById('btn-ocr-scan');
+    const $inputOcrFile = document.getElementById('input-ocr-file');
+
+    if ($btnOcrScan && $inputOcrFile) {
+        $btnOcrScan.addEventListener('click', () => {
+            $inputOcrFile.click();
+        });
+
+        $inputOcrFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const originalText = $btnOcrScan.innerHTML;
+            $btnOcrScan.innerHTML = '⏳ Analizando...';
+            $btnOcrScan.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Recoger Año y Mes activos en la vista para subir el recibo a la carpeta correcta
+            const year = document.getElementById('select-year-expense').value;
+            const month = document.getElementById('select-month-expense').value;
+            formData.append('year', year);
+            formData.append('month', month);
+
+            try {
+                // Lanzamos la subida a Drive y el escaneo Inteligente simultáneamente
+                const uploadPromise = apiUpload(formData);
+                const ocrPromise = apiOcrUpload(formData);
+
+                const [uploadResult, ocrData] = await Promise.all([uploadPromise, ocrPromise]);
+
+                // Rellenar las casillas si la IA dio en el clavo
+                if (ocrData.date) document.getElementById('input-date').value = ocrData.date;
+                if (ocrData.description) document.getElementById('input-description').value = ocrData.description;
+                if (ocrData.amount !== undefined) document.getElementById('input-amount').value = ocrData.amount;
+
+                // Forzar la recarga de los recibos que salen listados abajo (para que lo vean)
+                setTimeout(() => loadExpenses(), 500);
+
+                showToast('✨ Ticket auto-leído y subido a Drive', 'success');
+            } catch (err) {
+                showToast('❌ Error IA: ' + err.message, 'error');
+            } finally {
+                $btnOcrScan.innerHTML = originalText;
+                $btnOcrScan.disabled = false;
+                $inputOcrFile.value = ''; // allow picking same file again if aborted
+            }
+        });
+    }
 
     const $formAdd = document.getElementById('form-add-expense');
     const $addResult = document.getElementById('add-result');
@@ -741,8 +806,11 @@
     //  Init
     // ──────────────────────────────────────────────
 
-    document.addEventListener('DOMContentLoaded', () => {
-        switchView('gastos');
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetView = urlParams.get('view') || 'gastos';
+        switchView(targetView);
 
         // Lógica de Vista Nuevo Año (incrustada, mismo sistema que otras vistas)
         const $btnNewYear = document.getElementById('btn-new-year');
@@ -950,6 +1018,46 @@
                 if (!$aiSubmitBtn.disabled) {
                     $aiForm.dispatchEvent(new Event('submit'));
                 }
+            }
+        });
+    }
+
+    // ──────────────────────────────────────────────
+    //  Guardar Pensión Alimenticia
+    // ──────────────────────────────────────────────
+    const $btnSavePension = document.getElementById('btn-save-pension');
+    if ($btnSavePension) {
+        $btnSavePension.addEventListener('click', async () => {
+            const $inputPension = document.getElementById('input-pension');
+            const amount = parseFloat($inputPension.value);
+
+            if (isNaN(amount) || amount < 0) {
+                showToast('Introduce un importe válido para la pensión.', 'error');
+                return;
+            }
+
+            const year = parseInt($selectYearExpense.value, 10);
+            const month = parseInt($selectMonthExpense.value, 10);
+
+            showLoading();
+            $btnSavePension.disabled = true;
+            $btnSavePension.innerHTML = '<span>⏳</span>...';
+
+            try {
+                const res = await apiPost('set_pension', { year, month, amount });
+                hideLoading();
+                if (res.success) {
+                    showToast('Pensión guardada en Sheets y Firebase sincronizado.');
+                    loadExpenses(); // refrescar
+                } else {
+                    showToast('Error desconocido al guardar la pensión.', 'error');
+                }
+            } catch (e) {
+                hideLoading();
+                showToast(`Error al guardar: ${e.message}`, 'error');
+            } finally {
+                $btnSavePension.disabled = false;
+                $btnSavePension.innerHTML = '<span>💾</span> Guardar';
             }
         });
     }

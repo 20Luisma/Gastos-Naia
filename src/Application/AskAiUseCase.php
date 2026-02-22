@@ -118,7 +118,10 @@ class AskAiUseCase
         
         E) BÚSQUEDA EN GASTOS INDIVIDUALES: busca en 'gastos[].desc' con fuzzy matching. Fuzzy: 'tetto'→'teatro', 'colonas'→'colonias'.
         
-        F) CUALQUIER OTRA PREGUNTA FINANCIERA: SIEMPRE responde con los datos disponibles. NUNCA digas 'no puedo'.
+        F) REGLA ANTI-ALUCINACIONES (CRÍTICO):
+           - NUNCA INVENTES DATOS. NUNCA INVENTES NÚMEROS O CONCEPTOS que no existan explícitamente en el JSON proporcionado.
+           - Si para un mes no hay un gasto solicitado (ej. 'comedor'), simplemente OMITE ese mes o di explícitamente 'En [Mes] no hay gastos de [X]'.
+           - Si la suma total es de los meses existentes, da solo esa suma. No rellenes datos faltantes con estimaciones matemáticas bajo ninguna circunstancia.
         
         == FORMATO (OBLIGATORIO) ==
         - Markdown siempre: **negritas**, tablas con cabecera, listas.

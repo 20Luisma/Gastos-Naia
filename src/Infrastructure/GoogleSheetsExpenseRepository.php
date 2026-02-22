@@ -199,6 +199,62 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
         return $result;
     }
 
+    public function setPension(int $year, int $month, float $amount): bool
+    {
+        $spreadsheetId = $this->getSpreadsheetId($year);
+        $sheetName = $this->config['months'][$month] ?? null;
+
+        if (!$sheetName) {
+            throw new \Exception("Mes inválido: {$month}");
+        }
+
+        // Leer columnas D y E (las del resumen financiero)
+        $range = "{$sheetName}!D1:E200";
+        try {
+            $response = $this->sheets->spreadsheets_values->get(
+                $spreadsheetId,
+                $range,
+                ['valueRenderOption' => 'UNFORMATTED_VALUE']
+            );
+            $rows = $response->getValues() ?? [];
+        } catch (\Exception $e) {
+            throw new \Exception("Error leyendo resumen financiero {$sheetName}: " . $e->getMessage());
+        }
+
+        $targetRowIndex = -1;
+        $targetColumn = 'E'; // Asumimos que el valor va a la derecha inmediatamente, o E o F
+
+        foreach ($rows as $index => $row) {
+            $label = is_string($row[0] ?? null) ? strtolower(trim($row[0])) : '';
+            if (str_contains($label, 'pensión') || str_contains($label, 'pension') || str_contains($label, 'pensio')) {
+                // Las filas en Sheets son 1-indexed
+                $targetRowIndex = $index + 1;
+                break;
+            }
+        }
+
+        if ($targetRowIndex === -1) {
+            throw new \Exception("No se encontró la celda de Pensión en la hoja de {$sheetName}.");
+        }
+
+        $writeRange = "{$sheetName}!E{$targetRowIndex}";
+        $body = new ValueRange([
+            'values' => [[$amount]]
+        ]);
+
+        try {
+            $this->sheets->spreadsheets_values->update(
+                $spreadsheetId,
+                $writeRange,
+                $body,
+                ['valueInputOption' => 'USER_ENTERED']
+            );
+            return true;
+        } catch (\Exception $e) {
+            throw new \Exception("Error guardando pensión: " . $e->getMessage());
+        }
+    }
+
     public function addExpense(int $year, int $month, Expense $expense): bool
     {
         $spreadsheetId = $this->getSpreadsheetId($year);
