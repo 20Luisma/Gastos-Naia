@@ -298,7 +298,7 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
                 $body,
                 [
                     'valueInputOption' => 'USER_ENTERED',
-                    'insertDataOption' => 'INSERT_ROWS',
+                    'insertDataOption' => 'OVERWRITE',
                 ]
             );
         } catch (\Exception $e) {
