@@ -39,42 +39,61 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
     public function getMonthlyTotals(int $year): array
     {
         $spreadsheetId = $this->getSpreadsheetId($year);
-        $sheetName = $this->config['sheet_anual'];
-        $range = "{$sheetName}!A1:B13";
-
-        try {
-            $response = $this->sheets->spreadsheets_values->get(
-                $spreadsheetId,
-                $range,
-                ['valueRenderOption' => 'UNFORMATTED_VALUE']
-            );
-            $values = $response->getValues() ?? [];
-        } catch (\Exception $e) {
-            $this->warnings[] = "Error leyendo totales mensuales de {$year}: " . $e->getMessage();
-            return $this->emptyMonths();
-        }
+        $monthLabels = $this->config['month_labels'];
+        $monthSheets = $this->config['months'];
 
         $results = [];
-        $monthLabels = $this->config['month_labels'];
 
         for ($m = 1; $m <= 12; $m++) {
-            $rowIndex = $m;
+            $sheetName = $monthSheets[$m] ?? null;
             $total = 0.0;
 
-            if (isset($values[$rowIndex]) && isset($values[$rowIndex][1])) {
-                $raw = $values[$rowIndex][1];
-                $total = is_numeric($raw) ? (float) $raw : $this->parseMoneyValue($raw) ?? 0.0;
+            if ($sheetName) {
+                // Leemos columnas A, B y C para poder detectar la fila de subtotal
+                $range = "{$sheetName}!A1:C200";
+                try {
+                    $response = $this->sheets->spreadsheets_values->get(
+                        $spreadsheetId,
+                        $range,
+                        ['valueRenderOption' => 'UNFORMATTED_VALUE']
+                    );
+                    $values = $response->getValues() ?? [];
+
+                    // Sumamos la columna C (index 2) saltando la cabecera y parando en subtotales
+                    for ($i = 1; $i < count($values); $i++) {
+                        $row = $values[$i];
+                        $cellA = trim((string) ($row[0] ?? ''));
+                        $cellB = trim((string) ($row[1] ?? ''));
+                        $cellC = $row[2] ?? null;
+
+                        if (empty($cellA) && empty($cellB) && $cellC === null) {
+                            continue; // fila vacía, seguir
+                        }
+                        if ($this->isSubtotalRow($cellA, $cellB)) {
+                            break; // llegamos al resumen, parar
+                        }
+
+                        $amount = is_numeric($cellC)
+                            ? (float) $cellC
+                            : ($this->parseMoneyValue((string) $cellC) ?? 0.0);
+
+                        $total += $amount;
+                    }
+                } catch (\Exception $e) {
+                    $this->warnings[] = "Error leyendo {$sheetName} para totales mensuales: " . $e->getMessage();
+                }
             }
 
             $results[] = [
                 'month' => $m,
                 'name' => $monthLabels[$m],
-                'total' => $total,
+                'total' => round($total, 2),
             ];
         }
 
         return $results;
     }
+
 
     public function getExpenses(int $year, int $month): array
     {
@@ -264,48 +283,26 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
             throw new \Exception("Mes inválido: {$month}");
         }
 
-        $range = "{$sheetName}!A1:C200";
-        try {
-            $response = $this->sheets->spreadsheets_values->get(
-                $spreadsheetId,
-                $range,
-                ['valueRenderOption' => 'FORMATTED_VALUE']
-            );
-            $values = $response->getValues() ?? [];
-        } catch (\Exception $e) {
-            throw new \Exception("Error leyendo hoja {$sheetName}: " . $e->getMessage());
-        }
-
-        $insertRow = 2;
-        for ($i = 1; $i < count($values); $i++) {
-            $row = $values[$i];
-            $cellA = trim($row[0] ?? '');
-            $cellB = trim($row[1] ?? '');
-            $cellC = trim($row[2] ?? '');
-
-            if ((empty($cellA) && empty($cellB) && empty($cellC)) || $this->isSubtotalRow($cellA, $cellB)) {
-                $insertRow = $i + 1;
-                break;
-            }
-            $insertRow = $i + 2;
-        }
-
-        $amount = $expense->getAmount();
-
-        $writeRange = "{$sheetName}!A{$insertRow}:C{$insertRow}";
+        // Usamos la API Append de Google Sheets: encuentra automáticamente el primer
+        // espacio libre al final de los datos y añade la fila ahí, sin pisar
+        // filas de subtotales ni fórmulas existentes.
+        $range = "{$sheetName}!A:C";
         $body = new ValueRange([
-            'values' => [[$expense->getDate(), $expense->getDescription(), $amount]]
+            'values' => [[$expense->getDate(), $expense->getDescription(), $expense->getAmount()]]
         ]);
 
         try {
-            $this->sheets->spreadsheets_values->update(
+            $this->sheets->spreadsheets_values->append(
                 $spreadsheetId,
-                $writeRange,
+                $range,
                 $body,
-                ['valueInputOption' => 'USER_ENTERED']
+                [
+                    'valueInputOption' => 'USER_ENTERED',
+                    'insertDataOption' => 'INSERT_ROWS',
+                ]
             );
         } catch (\Exception $e) {
-            throw new \Exception("Error escribiendo gasto: " . $e->getMessage());
+            throw new \Exception("Error añadiendo gasto: " . $e->getMessage());
         }
 
         return true;

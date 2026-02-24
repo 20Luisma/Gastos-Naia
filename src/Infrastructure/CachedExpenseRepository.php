@@ -159,6 +159,7 @@ class CachedExpenseRepository implements ExpenseRepositoryInterface
     {
         $this->cache->invalidate("expenses_{$year}_{$month}");
         $this->cache->invalidate("monthly_totals_{$year}");
+        $this->cache->invalidate("monthly_financial_{$year}_{$month}");
         $this->cache->invalidate('annual_totals');
     }
 }

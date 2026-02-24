@@ -164,7 +164,7 @@ class ApiController
                     $success = $this->addExpenseUseCase->execute(
                         (int) $input['year'],
                         (int) $input['month'],
-                        $input['date'],
+                        $this->normalizeDate($input['date'] ?? ''),
                         $input['description'],
                         (float) $input['amount']
                     );
@@ -178,7 +178,7 @@ class ApiController
                         (int) $input['year'],
                         (int) $input['month'],
                         (int) $input['row'],
-                        $input['date'],
+                        $this->normalizeDate($input['date'] ?? ''),
                         $input['description'],
                         (float) $input['amount']
                     );
@@ -441,5 +441,19 @@ class ApiController
             throw new \Exception('JSON inválido en el body de la petición.');
         }
         return $data;
+    }
+
+    /**
+     * Normaliza la fecha al formato DD/MM/YYYY que usa Google Sheets.
+     * El input HTML type="date" devuelve YYYY-MM-DD; lo convertimos aquí.
+     * Si ya viene en DD/MM/YYYY (o cualquier otro formato) lo dejamos tal cual.
+     */
+    private function normalizeDate(string $date): string
+    {
+        // Detectar formato YYYY-MM-DD
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $date, $m)) {
+            return "{$m[3]}/{$m[2]}/{$m[1]}";
+        }
+        return $date;
     }
 }
