@@ -409,6 +409,7 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
 
         $values = $response->getValues() ?? [];
         $searchText = $this->config['search_text'];
+        $foundValues = [];
 
         foreach ($values as $row) {
             foreach ($row as $colIndex => $cell) {
@@ -416,12 +417,24 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
                     $nextCol = $colIndex + 1;
                     if (isset($row[$nextCol])) {
                         $raw = $row[$nextCol];
-                        if (is_numeric($raw))
-                            return (float) $raw;
-                        return $this->parseMoneyValue($raw);
+                        if (is_numeric($raw)) {
+                            $foundValues[] = (float) $raw;
+                        } else {
+                            $parsed = $this->parseMoneyValue($raw);
+                            if ($parsed !== null) {
+                                $foundValues[] = $parsed;
+                            }
+                        }
                     }
                 }
             }
+        }
+
+        if (!empty($foundValues)) {
+            // Devuelve el valor numérico más alto encontrado asociado a "Total Final:"
+            // Esto previene agarrar accidentalmente un "Total Final:" de un desglose mensual 
+            // que esté escrito más arriba en la hoja
+            return max($foundValues);
         }
 
         $this->warnings[] = "No se encontró '{$searchText}' en spreadsheet {$spreadsheetId}.";

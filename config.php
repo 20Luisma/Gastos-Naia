@@ -14,6 +14,7 @@
 return [
     // ── Credenciales ──
     'credentials_path' => __DIR__ . '/credentials/service-account.json',
+    'webhook_secret' => 'naia_secret_2026',
 
     // ── Nombres de hojas ──
     'sheet_anual' => 'Gastos Anual',

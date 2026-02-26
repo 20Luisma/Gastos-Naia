@@ -145,6 +145,19 @@ class ApiController
                     ]);
                     break;
 
+                case 'clear_cache':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    $secret = $input['secret'] ?? '';
+                    if (empty($secret) || $secret !== ($this->config['webhook_secret'] ?? '')) {
+                        http_response_code(403);
+                        $this->jsonResponse(['error' => 'No autorizado.']);
+                        return;
+                    }
+                    $this->expenseRepository->invalidateAll();
+                    $this->jsonResponse(['success' => true]);
+                    break;
+
                 case 'ai_ask':
                     $this->requirePost();
                     // Aumentamos el límite de tiempo de PHP porque la IA puede tardar +30s en generar texto largo o analizar mucho contexto
