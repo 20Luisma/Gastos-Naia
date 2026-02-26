@@ -12,3 +12,6 @@ uploads/
 # Archivos basura del sistema operativo
 .DS_Store
 Thumbs.db
+.idea/
+.env.prod
+vendor/
