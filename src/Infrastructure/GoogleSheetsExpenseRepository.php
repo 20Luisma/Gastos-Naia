@@ -43,44 +43,58 @@ class GoogleSheetsExpenseRepository implements ExpenseRepositoryInterface
         $monthSheets = $this->config['months'];
 
         $results = [];
+        $ranges = [];
+        $validMonths = [];
+
+        for ($m = 1; $m <= 12; $m++) {
+            $sheetName = $monthSheets[$m] ?? null;
+            if ($sheetName) {
+                // Leemos columnas A, B y C para poder detectar la fila de subtotal
+                $ranges[] = "{$sheetName}!A1:C200";
+                $validMonths[] = $m;
+            }
+        }
+
+        $allValues = [];
+        if (!empty($ranges)) {
+            try {
+                $response = $this->sheets->spreadsheets_values->batchGet(
+                    $spreadsheetId,
+                    ['ranges' => $ranges, 'valueRenderOption' => 'UNFORMATTED_VALUE']
+                );
+                $valueRanges = $response->getValueRanges() ?? [];
+                foreach ($validMonths as $index => $m) {
+                    $allValues[$m] = $valueRanges[$index]->getValues() ?? [];
+                }
+            } catch (\Exception $e) {
+                $this->warnings[] = "Error leyendo totales mensuales (batchGet): " . $e->getMessage();
+            }
+        }
 
         for ($m = 1; $m <= 12; $m++) {
             $sheetName = $monthSheets[$m] ?? null;
             $total = 0.0;
 
-            if ($sheetName) {
-                // Leemos columnas A, B y C para poder detectar la fila de subtotal
-                $range = "{$sheetName}!A1:C200";
-                try {
-                    $response = $this->sheets->spreadsheets_values->get(
-                        $spreadsheetId,
-                        $range,
-                        ['valueRenderOption' => 'UNFORMATTED_VALUE']
-                    );
-                    $values = $response->getValues() ?? [];
+            if ($sheetName && isset($allValues[$m])) {
+                $values = $allValues[$m];
+                for ($i = 1; $i < count($values); $i++) {
+                    $row = $values[$i];
+                    $cellA = trim((string) ($row[0] ?? ''));
+                    $cellB = trim((string) ($row[1] ?? ''));
+                    $cellC = $row[2] ?? null;
 
-                    // Sumamos la columna C (index 2) saltando la cabecera y parando en subtotales
-                    for ($i = 1; $i < count($values); $i++) {
-                        $row = $values[$i];
-                        $cellA = trim((string) ($row[0] ?? ''));
-                        $cellB = trim((string) ($row[1] ?? ''));
-                        $cellC = $row[2] ?? null;
-
-                        if (empty($cellA) && empty($cellB) && $cellC === null) {
-                            continue; // fila vacía, seguir
-                        }
-                        if ($this->isSubtotalRow($cellA, $cellB)) {
-                            break; // llegamos al resumen, parar
-                        }
-
-                        $amount = is_numeric($cellC)
-                            ? (float) $cellC
-                            : ($this->parseMoneyValue((string) $cellC) ?? 0.0);
-
-                        $total += $amount;
+                    if (empty($cellA) && empty($cellB) && $cellC === null) {
+                        continue; // fila vacía, seguir
                     }
-                } catch (\Exception $e) {
-                    $this->warnings[] = "Error leyendo {$sheetName} para totales mensuales: " . $e->getMessage();
+                    if ($this->isSubtotalRow($cellA, $cellB)) {
+                        break; // llegamos al resumen, parar
+                    }
+
+                    $amount = is_numeric($cellC)
+                        ? (float) $cellC
+                        : ($this->parseMoneyValue((string) $cellC) ?? 0.0);
+
+                    $total += $amount;
                 }
             }
 

@@ -93,7 +93,7 @@ class CachedExpenseRepository implements ExpenseRepositoryInterface
         $result = $this->inner->addExpense($year, $month, $expense);
 
         if ($result) {
-            $this->invalidateAll();
+            $this->invalidateMonth($year, $month);
         }
 
         return $result;
@@ -104,7 +104,7 @@ class CachedExpenseRepository implements ExpenseRepositoryInterface
         $result = $this->inner->editExpense($year, $month, $expense);
 
         if ($result) {
-            $this->invalidateAll();
+            $this->invalidateMonth($year, $month);
         }
 
         return $result;
@@ -115,7 +115,7 @@ class CachedExpenseRepository implements ExpenseRepositoryInterface
         $result = $this->inner->deleteExpense($year, $month, $row);
 
         if ($result) {
-            $this->invalidateAll();
+            $this->invalidateMonth($year, $month);
         }
 
         return $result;
@@ -126,10 +126,18 @@ class CachedExpenseRepository implements ExpenseRepositoryInterface
         $result = $this->inner->setPension($year, $month, $amount);
 
         if ($result) {
-            $this->invalidateAll();
+            $this->invalidateMonth($year, $month);
         }
 
         return $result;
+    }
+
+    private function invalidateMonth(int $year, int $month): void
+    {
+        $this->cache->invalidate("expenses_{$year}_{$month}");
+        $this->cache->invalidate("monthly_financial_{$year}_{$month}");
+        $this->cache->invalidate("monthly_totals_{$year}");
+        $this->cache->invalidate("annual_totals");
     }
 
     public function getAvailableYears(): array
