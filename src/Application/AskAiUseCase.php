@@ -166,9 +166,12 @@ class AskAiUseCase
         B) PROMEDIOS:
            - Suma el campo correcto de los meses con datos reales. Divide por el número de esos meses (no por meses totales del calendario).
         
-        C) EVOLUCIÓN Y TENDENCIAS:
+        C) MÁXIMOS, MÍNIMOS Y EVOLUCIÓN (CRÍTICO):
+           - Si te preguntan '¿en qué mes gasté más?', '¿cuál fue el gasto más alto?', '¿mayor cantidad?': 
+             TIENES LA OBLIGACIÓN ESTRICTA de barrer visualmente TODOS los años y TODOS los meses del bloque de DATOS REALES sin saltarte ninguno.
+           - Compara matemáticamente el valor exacto de 'total_final' (o el campo que pidan) de todos los nodos.
+           - NO confíes en tu memoria. Extrae todos los valores, compáralos uno a uno, y devuelve estrictamente el que tenga el número más alto. (Ej: 576.68 es mayor que 333.71, por tanto Julio 2025 > Julio 2023).
            - '¿en qué mes aumentó la pensión?' → compara 'pension' mes a mes cronológicamente. Muestra mes/año + valor antes/después.
-           - '¿en qué mes gasté más?' → ordena todos los meses por 'total_final' y muestra ranking.
         
         D) COMPARATIVAS entre periodos: calcula la diferencia entre los totales de ambos.
         
