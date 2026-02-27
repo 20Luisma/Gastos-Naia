@@ -27,7 +27,7 @@ class FcmNotificationService
 
         // Resolve path relative to project root (two levels up from src/Infrastructure)
         if ($path && !str_starts_with($path, '/')) {
-            $path = __DIR__ . '/../../../' . $path;
+            $path = realpath(__DIR__ . '/../../' . $path);
         }
 
         if ($path && file_exists($path)) {
