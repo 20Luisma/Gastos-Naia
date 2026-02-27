@@ -9,12 +9,14 @@ class DeleteExpenseUseCase
     private ExpenseRepositoryInterface $expenseRepository;
     private \GastosNaia\Infrastructure\FirebaseBackupService $backupService;
     private \GastosNaia\Infrastructure\FirebaseWriteRepository $firebaseWrite;
+    private \GastosNaia\Infrastructure\FcmNotificationService $fcm;
 
     public function __construct(ExpenseRepositoryInterface $expenseRepository, \GastosNaia\Infrastructure\FirebaseBackupService $backupService)
     {
         $this->expenseRepository = $expenseRepository;
         $this->backupService = $backupService;
         $this->firebaseWrite = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
+        $this->fcm = new \GastosNaia\Infrastructure\FcmNotificationService();
     }
 
     public function execute(int $year, int $month, int $row): bool
@@ -45,6 +47,11 @@ class DeleteExpenseUseCase
 
             // Sync specifically this year's index to Firebase Read Replica for AI
             $this->firebaseWrite->syncYearFast($year, $this->expenseRepository);
+
+            // Enviar notificación push FCM al móvil
+            $body = "{$expenseToBackup->getDescription()} — " . number_format($expenseToBackup->getAmount(), 2, ',', '.') . ' €';
+            $this->fcm->notify('delete', $body, $year, $month);
+
         } elseif ($success) {
             // Backup fallback if exactly row wasn't matched but deleted
             $this->backupService->backupExpenseAction('DELETE', [
@@ -53,6 +60,9 @@ class DeleteExpenseUseCase
                 'row' => $row,
                 'status' => 'Data deleted but details not found before deletion'
             ]);
+
+            // Notificación genérica
+            $this->fcm->notify('delete', 'Gasto eliminado', $year, $month);
         }
 
         return $success;
