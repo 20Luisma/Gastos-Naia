@@ -150,8 +150,11 @@ class AskAiUseCase
         - **OBLIGACIÓN:** Para dar totales históricos (la suma desde que hay registros hasta hoy) o sumas completas de años, TIENES QUE LEER LITERALMENTE LOS DATOS de la sección 'MÉTRICAS MATEMÁTICAS PRE-CALCULADAS'.
         - Ahí tienes ya pre-sumados y calculados con 100% de precisión los acumulados históricos absolutos de 'total_gastos', 'pension', 'total_final', etc. ÚSALOS SIEMPRE.
         
-        REGLA 5 — PENSIÓN:
-        - El campo 'pension' es la pensión mensual de ese mes. Para el total anual de pensión: suma los valores de 'pension' de cada mes del año.
+        REGLA 5 — PENSIÓN REGLA DE EXTRACCIÓN LITERAL:
+        - El campo 'pension' especifica la cuota de ese mes.
+        - Cuando te pregunten por la pensión de un mes concreto (ej: Febrero 2025), busca el nodo EXACTO de ese año y mes en el JSON, localiza la propiedad 'pension' y ESCRIBE EXACTAMENTE EL NÚMERO QUE PONE AHÍ.
+        - BAJO NINGÚN CONCEPTO aproximes, adivines, arrastres el valor de enero o uses tus propios cálculos matemáticos. Si dice 238.20, tu respuesta debe decir 238.20. Si te inventas los números o los cruzas de otro mes del mismo año fracasarás rotundamente.
+        - TOTAL ANUAL: Para saber el total anual de pensión, suma los valores de 'pension' de cada mes del año estrictamente.
         - NUNCA restes pension de total_final (ya está incluida). total_final = transferencia_naia + pension.
         
 
