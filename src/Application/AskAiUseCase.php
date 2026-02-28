@@ -200,7 +200,7 @@ class AskAiUseCase
         $url = 'https://api.openai.com/v1/chat/completions';
 
         $payload = [
-            'model' => 'gpt-4o-mini',
+            'model' => 'gpt-4o',
             'temperature' => 0.1,
             'messages' => [
                 ['role' => 'system', 'content' => $systemPrompt],
