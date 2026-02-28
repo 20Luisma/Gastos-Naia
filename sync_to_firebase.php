@@ -77,12 +77,18 @@ foreach ($years as $year) {
 
     foreach ($monthlyTotals as $mt) {
         $month = $mt['month'];
-        $transferencia = $mt['total'];
-        $totalGastos = $transferencia > 0.0 ? round($transferencia * 2, 2) : 0.0;
-
         echo "  - Leyendo mes $month...\n";
         $summary = safeRead(fn() => $repo->getMonthlyFinancialSummary($year, $month), $repo);
         sleep(1); // 1s sleep for rate limit
+
+        $totalGastos = $mt['total']; // mt['total'] is the exact arithmetic sum of the expense column
+
+        // Use the explicit 'total a pagar' from the spreadsheet if available, otherwise fallback to dividing by 2
+        if (isset($summary['transferencia_naia']) && $summary['transferencia_naia'] > 0.0) {
+            $transferencia = $summary['transferencia_naia'];
+        } else {
+            $transferencia = $totalGastos > 0.0 ? round($totalGastos / 2, 2) : 0.0;
+        }
 
         $expenses = safeRead(fn() => $repo->getExpenses($year, $month), $repo);
         sleep(1); // 1s sleep for rate limit

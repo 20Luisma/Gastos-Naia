@@ -61,12 +61,17 @@ class FirebaseWriteRepository
 
             foreach ($monthlyTotals as $mt) {
                 $month = $mt['month'];
-                // Como el Excel ya precalcula en la primera pestaña el 'Total/2' (y de ahí saca el dato el scraper),
-                // el monto recuperado ya es la transferencia.
-                $transferencia = $mt['total'];
-                $totalGastos = $transferencia > 0.0 ? round($transferencia * 2, 2) : 0.0;
-
                 $summary = $repo->getMonthlyFinancialSummary($year, $month);
+
+                // $mt['total'] is the exact arithmetic sum of the expense column
+                $totalGastos = $mt['total'];
+
+                // Use the explicit 'total a pagar' from the spreadsheet if available, otherwise fallback to dividing by 2
+                if (isset($summary['transferencia_naia']) && $summary['transferencia_naia'] > 0.0) {
+                    $transferencia = $summary['transferencia_naia'];
+                } else {
+                    $transferencia = $totalGastos > 0.0 ? round($totalGastos / 2, 2) : 0.0;
+                }
 
                 // Si el mes está completamente vacío (no reporta pensión ni transferencia, ej. un mes futuro),
                 // no debemos aplicarle la última pensión porque desvirtúa el total anual del año en curso.
