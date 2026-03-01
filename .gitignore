@@ -15,3 +15,7 @@ Thumbs.db
 .idea/
 .env.prod
 vendor/
+
+docs/google-oauth.md
+
+upload_key.php

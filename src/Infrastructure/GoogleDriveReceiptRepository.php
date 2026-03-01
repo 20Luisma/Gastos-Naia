@@ -30,6 +30,8 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
             'q' => $query,
             'spaces' => 'drive',
             'fields' => 'files(id, name)',
+            'supportsAllDrives' => true,
+            'includeItemsFromAllDrives' => true,
         ]);
 
         // 2. Buscar coincidencias flexibles usando regex Local
@@ -50,7 +52,10 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
             'mimeType' => 'application/vnd.google-apps.folder'
         ]);
 
-        $folder = $this->drive->files->create($fileMetadata, ['fields' => 'id']);
+        $folder = $this->drive->files->create($fileMetadata, [
+            'fields' => 'id',
+            'supportsAllDrives' => true,
+        ]);
         return $folder->getId();
     }
 
@@ -81,7 +86,8 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
             'data' => $content,
             'mimeType' => $mimeType,
             'uploadType' => 'multipart',
-            'fields' => 'id, name, webViewLink, size, createdTime'
+            'fields' => 'id, name, webViewLink, size, createdTime',
+            'supportsAllDrives' => true,
         ]);
 
         $size = (int) $file->getSize();
@@ -115,7 +121,9 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
             $results = $this->drive->files->listFiles([
                 'q' => $query,
                 'spaces' => 'drive',
-                'fields' => 'files(id, name, webViewLink, size, createdTime, fileExtension, mimeType)'
+                'fields' => 'files(id, name, webViewLink, size, createdTime, fileExtension, mimeType)',
+                'supportsAllDrives' => true,
+                'includeItemsFromAllDrives' => true,
             ]);
 
             $files = [];

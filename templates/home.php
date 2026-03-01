@@ -62,6 +62,12 @@
                     <span class="nav__btn-icon">🤖</span>
                     <span>AGENTE IA ALFRED</span>
                 </button>
+                <a href="?action=logout" class="nav__btn"
+                    style="margin-left: 8px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #f87171; text-decoration: none;"
+                    title="Cerrar sesión" onclick="return confirm('¿Cerrar sesión?')">
+                    <span class="nav__btn-icon">🔒</span>
+                    <span>Salir</span>
+                </a>
             </nav>
         </div>
     </header>
