@@ -48,10 +48,16 @@ class AddExpenseUseCase
 
             // Enviar a Telegram
             if ($this->telegram) {
+                // Asegurar que la fecha se procesa bien para el mensaje
+                $displayDate = date('d/m/Y', strtotime($date));
+                if ($displayDate === '01/01/1970' || !$displayDate) {
+                    $displayDate = $date; // Fallback al string original si falla
+                }
+
                 $msg = "<b>💰 Nuevo Gasto Naia</b>\n\n";
                 $msg .= "<b>Concepto:</b> {$description}\n";
                 $msg .= "<b>Importe:</b> " . number_format($amount, 2, ',', '.') . " €\n";
-                $msg .= "<b>Fecha:</b> " . date('d/m/Y', strtotime($date));
+                $msg .= "<b>Fecha:</b> " . $displayDate;
                 $this->telegram->sendMessage($msg);
             }
         }

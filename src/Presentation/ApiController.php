@@ -526,10 +526,17 @@ class ApiController
 
                     // Notificar a Telegram
                     if ($this->telegramService) {
-                        $summary = $input['summary'] ?? 'Sin título';
-                        $date = $input['start']['date'] ?? ($input['start']['dateTime'] ?? '');
-                        if ($date) {
-                            $date = date('d/m/Y', strtotime($date));
+                        $summary = $input['summary'] ?? ($input['title'] ?? 'Sin título');
+
+                        // Capturar fecha (puede venir como objeto con 'date'/'dateTime' o como string directo)
+                        $dateRaw = $input['start'];
+                        if (is_array($dateRaw)) {
+                            $dateRaw = $dateRaw['date'] ?? ($dateRaw['dateTime'] ?? '');
+                        }
+
+                        $date = '';
+                        if ($dateRaw) {
+                            $date = date('d/m/Y', strtotime($dateRaw));
                         }
 
                         $type = $input['colorId'] ?? '1'; // Default color mapping or type
