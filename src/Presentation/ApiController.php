@@ -33,10 +33,10 @@ class ApiController
     private ?SetPensionUseCase $setPensionUseCase = null;
     private ?\GastosNaia\Application\AskAiUseCase $askAiUseCase = null;
     private ?\GastosNaia\Application\ScanReceiptUseCase $scanReceiptUseCase = null;
-    private \GastosNaia\Application\GetComunicadosUseCase $getComunicadosUseCase;
-    private \GastosNaia\Application\UploadComunicadoFileUseCase $uploadComunicadoFileUseCase;
-    private \GastosNaia\Application\SaveComunicadoUseCase $saveComunicadoUseCase;
-    private \GastosNaia\Application\DeleteComunicadoUseCase $deleteComunicadoUseCase;
+    private ?\GastosNaia\Application\GetComunicadosUseCase $getComunicadosUseCase = null;
+    private ?\GastosNaia\Application\UploadComunicadoFileUseCase $uploadComunicadoFileUseCase = null;
+    private ?\GastosNaia\Application\SaveComunicadoUseCase $saveComunicadoUseCase = null;
+    private ?\GastosNaia\Application\DeleteComunicadoUseCase $deleteComunicadoUseCase = null;
 
     // Repositories
     private ?CachedExpenseRepository $expenseRepository = null;
