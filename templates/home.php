@@ -528,245 +528,242 @@
                     </aside>
 
                 </div>
+            </section>
 
-                <!-- ═══ Vista: Comunicados ═══ -->
-                <section id="view-comunicados" class="view" style="display:none; padding: 20px;">
-                    <div class="comunicados-header"
-                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
-                        <h2 class="view-title"
-                            style="margin:0; font-size:1.5rem; color:var(--text); display:flex; align-items:center; gap:10px;">
-                            <span style="font-size:1.8rem;">📝</span> Diario de Naia
-                        </h2>
-                        <button id="btn-add-comunicado" class="btn btn--primary"
-                            style="display:flex; align-items:center; gap:8px;">
-                            <span>➕</span> Nuevo Comunicado
-                        </button>
+            <!-- ═══ Vista: Comunicados ═══ -->
+            <section id="view-comunicados" class="view" style="display:none; padding: 20px;">
+                <div class="comunicados-header"
+                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+                    <h2 class="view-title"
+                        style="margin:0; font-size:1.5rem; color:var(--text); display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:1.8rem;">📝</span> Diario de Naia
+                    </h2>
+                    <button id="btn-add-comunicado" class="btn btn--primary"
+                        style="display:flex; align-items:center; gap:8px;">
+                        <span>➕</span> Nuevo Comunicado
+                    </button>
+                </div>
+
+                <div id="comunicados-timeline" class="comunicados-timeline"
+                    style="max-width: 800px; margin: 0 auto; position:relative;">
+                    <!-- Las tarjetas se inyectarán aquí vía JS -->
+                </div>
+            </section>
+
+
+            <!-- Modal Nuevo Evento / Tarea (se muestra como popup centrado) -->
+            <div id="gcal-modal-overlay" class="gcal-modal-overlay" style="display:none;">
+                <div class="gcal-modal" id="gcal-modal">
+                    <div class="gcal-modal__header">
+                        <span id="gcal-modal-title-icon">📅</span>
+                        <h3 id="gcal-modal-title">Extraescolares</h3>
+                        <button id="gcal-modal-close" class="gcal-icon-btn">✕</button>
                     </div>
 
-                    <div id="comunicados-timeline" class="comunicados-timeline"
-                        style="max-width: 800px; margin: 0 auto; position:relative;">
-                        <!-- Las tarjetas se inyectarán aquí vía JS -->
-                    </div>
-                </section>
+                    <!-- FORM EVENTO -->
+                    <form id="cal-event-form" class="form" style="display:none;">
+                        <label class="form__field">
+                            <span class="form__label">Título</span>
+                            <input type="text" id="cal-event-title" class="form__input" placeholder="Añade un título"
+                                required>
+                        </label>
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">📍 Ubicación</span>
+                            <input type="text" id="cal-event-location" class="form__input"
+                                placeholder="Lugar o dirección">
+                        </label>
+                        <div class="form__row" style="margin-top:10px;">
+                            <label class="form__field">
+                                <span class="form__label">Fecha inicio</span>
+                                <input type="date" id="cal-event-start" class="form__input" required>
+                            </label>
+                            <label class="form__field">
+                                <span class="form__label">Fecha fin</span>
+                                <input type="date" id="cal-event-end" class="form__input">
+                            </label>
+                        </div>
+                        <label class="form__field" style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="cal-event-allday" style="width:18px;height:18px;">
+                            <span class="form__label" style="margin:0; cursor:pointer;">Todo el día</span>
+                        </label>
+                        <div id="cal-event-time-row" class="form__row" style="margin-top:10px; display:grid;">
+                            <label class="form__field">
+                                <span class="form__label">Hora inicio</span>
+                                <input type="time" id="cal-event-time-start" class="form__input" value="09:00">
+                            </label>
+                            <label class="form__field">
+                                <span class="form__label">Hora fin</span>
+                                <input type="time" id="cal-event-time-end" class="form__input" value="10:00">
+                            </label>
+                        </div>
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Descripción (opcional)</span>
+                            <input type="text" id="cal-event-desc" class="form__input" placeholder="Notas adicionales">
+                        </label>
 
+                        <!-- Sección Repetir -->
+                        <div class="gcal-repeat-section" style="margin-top:14px;">
+                            <label class="gcal-repeat-toggle">
+                                <input type="checkbox" id="cal-event-repeat">
+                                <span class="form__label" style="margin:0; cursor:pointer;">🔁 Repetir cada
+                                    semana</span>
+                            </label>
 
-                <!-- Modal Nuevo Evento / Tarea (se muestra como popup centrado) -->
-                <div id="gcal-modal-overlay" class="gcal-modal-overlay" style="display:none;">
-                    <div class="gcal-modal" id="gcal-modal">
-                        <div class="gcal-modal__header">
-                            <span id="gcal-modal-title-icon">📅</span>
-                            <h3 id="gcal-modal-title">Extraescolares</h3>
-                            <button id="gcal-modal-close" class="gcal-icon-btn">✕</button>
+                            <div id="cal-repeat-options"
+                                style="display:none; margin-top:12px; padding:12px; background:rgba(124,58,237,0.07); border-radius:8px; border:1px solid rgba(124,58,237,0.2);">
+                                <p class="form__label" style="margin-bottom:8px;">Días de la semana:</p>
+                                <div class="gcal-weekday-picker">
+                                    <label class="gcal-wd-btn"><input type="checkbox" value="1"> Lun</label>
+                                    <label class="gcal-wd-btn"><input type="checkbox" value="2"> Mar</label>
+                                    <label class="gcal-wd-btn"><input type="checkbox" value="3"> Mié</label>
+                                    <label class="gcal-wd-btn"><input type="checkbox" value="4"> Jue</label>
+                                    <label class="gcal-wd-btn"><input type="checkbox" value="5"> Vie</label>
+                                    <label class="gcal-wd-btn"><input type="checkbox" value="6"> Sáb</label>
+                                    <label class="gcal-wd-btn"><input type="checkbox" value="0"> Dom</label>
+                                </div>
+                                <label class="form__field" style="margin-top:10px;">
+                                    <span class="form__label">Repetir hasta</span>
+                                    <input type="date" id="cal-repeat-until" class="form__input">
+                                </label>
+                                <p id="cal-repeat-preview"
+                                    style="margin-top:8px; font-size:0.75rem; color:var(--accent-light); min-height:1.2em;">
+                                </p>
+                            </div>
                         </div>
 
-                        <!-- FORM EVENTO -->
-                        <form id="cal-event-form" class="form" style="display:none;">
-                            <label class="form__field">
-                                <span class="form__label">Título</span>
-                                <input type="text" id="cal-event-title" class="form__input"
-                                    placeholder="Añade un título" required>
-                            </label>
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">📍 Ubicación</span>
-                                <input type="text" id="cal-event-location" class="form__input"
-                                    placeholder="Lugar o dirección">
-                            </label>
-                            <div class="form__row" style="margin-top:10px;">
-                                <label class="form__field">
-                                    <span class="form__label">Fecha inicio</span>
-                                    <input type="date" id="cal-event-start" class="form__input" required>
-                                </label>
-                                <label class="form__field">
-                                    <span class="form__label">Fecha fin</span>
-                                    <input type="date" id="cal-event-end" class="form__input">
-                                </label>
-                            </div>
-                            <label class="form__field"
-                                style="margin-top:10px; display:flex; align-items:center; gap:10px;">
-                                <input type="checkbox" id="cal-event-allday" style="width:18px;height:18px;">
-                                <span class="form__label" style="margin:0; cursor:pointer;">Todo el día</span>
-                            </label>
-                            <div id="cal-event-time-row" class="form__row" style="margin-top:10px; display:grid;">
-                                <label class="form__field">
-                                    <span class="form__label">Hora inicio</span>
-                                    <input type="time" id="cal-event-time-start" class="form__input" value="09:00">
-                                </label>
-                                <label class="form__field">
-                                    <span class="form__label">Hora fin</span>
-                                    <input type="time" id="cal-event-time-end" class="form__input" value="10:00">
-                                </label>
-                            </div>
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">Descripción (opcional)</span>
-                                <input type="text" id="cal-event-desc" class="form__input"
-                                    placeholder="Notas adicionales">
-                            </label>
+                        <div class="form__actions" style="margin-top:1.5rem;">
+                            <button type="submit" class="btn btn--primary" id="btn-save-event">💾 Guardar</button>
+                            <button type="button" class="btn btn--ghost" id="btn-cancel-event">Cancelar</button>
+                        </div>
+                        <div id="cal-event-result" class="form__result"></div>
 
-                            <!-- Sección Repetir -->
-                            <div class="gcal-repeat-section" style="margin-top:14px;">
-                                <label class="gcal-repeat-toggle">
-                                    <input type="checkbox" id="cal-event-repeat">
-                                    <span class="form__label" style="margin:0; cursor:pointer;">🔁 Repetir cada
-                                        semana</span>
-                                </label>
+                    </form>
 
-                                <div id="cal-repeat-options"
-                                    style="display:none; margin-top:12px; padding:12px; background:rgba(124,58,237,0.07); border-radius:8px; border:1px solid rgba(124,58,237,0.2);">
-                                    <p class="form__label" style="margin-bottom:8px;">Días de la semana:</p>
-                                    <div class="gcal-weekday-picker">
-                                        <label class="gcal-wd-btn"><input type="checkbox" value="1"> Lun</label>
-                                        <label class="gcal-wd-btn"><input type="checkbox" value="2"> Mar</label>
-                                        <label class="gcal-wd-btn"><input type="checkbox" value="3"> Mié</label>
-                                        <label class="gcal-wd-btn"><input type="checkbox" value="4"> Jue</label>
-                                        <label class="gcal-wd-btn"><input type="checkbox" value="5"> Vie</label>
-                                        <label class="gcal-wd-btn"><input type="checkbox" value="6"> Sáb</label>
-                                        <label class="gcal-wd-btn"><input type="checkbox" value="0"> Dom</label>
-                                    </div>
-                                    <label class="form__field" style="margin-top:10px;">
-                                        <span class="form__label">Repetir hasta</span>
-                                        <input type="date" id="cal-repeat-until" class="form__input">
-                                    </label>
-                                    <p id="cal-repeat-preview"
-                                        style="margin-top:8px; font-size:0.75rem; color:var(--accent-light); min-height:1.2em;">
-                                    </p>
-                                </div>
-                            </div>
+                    <!-- FORM NOTAS IMPORTANTES (desde modal) -->
+                    <form id="modal-task-form" class="form" style="display:none;">
+                        <label class="form__field">
+                            <span class="form__label">Contenido de la nota</span>
+                            <input type="text" id="modal-task-title" class="form__input"
+                                placeholder="¿Qué necesitas recordar?" required>
+                        </label>
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">📍 Ubicación</span>
+                            <input type="text" id="modal-task-location" class="form__input"
+                                placeholder="Dirección o lugar">
+                        </label>
 
-                            <div class="form__actions" style="margin-top:1.5rem;">
-                                <button type="submit" class="btn btn--primary" id="btn-save-event">💾 Guardar</button>
-                                <button type="button" class="btn btn--ghost" id="btn-cancel-event">Cancelar</button>
-                            </div>
-                            <div id="cal-event-result" class="form__result"></div>
-
-                        </form>
-
-                        <!-- FORM NOTAS IMPORTANTES (desde modal) -->
-                        <form id="modal-task-form" class="form" style="display:none;">
-                            <label class="form__field">
-                                <span class="form__label">Contenido de la nota</span>
-                                <input type="text" id="modal-task-title" class="form__input"
-                                    placeholder="¿Qué necesitas recordar?" required>
-                            </label>
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">📍 Ubicación</span>
-                                <input type="text" id="modal-task-location" class="form__input"
-                                    placeholder="Dirección o lugar">
-                            </label>
-
-                            <div class="form__row"
-                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                                <label class="form__field">
-                                    <span class="form__label">Fecha</span>
-                                    <input type="date" id="modal-task-date" class="form__input" required>
-                                </label>
-                                <label class="form__field">
-                                    <span class="form__label">¿Todo el día?</span>
-                                    <div style="display: flex; align-items: center; height: 38px;">
-                                        <input type="checkbox" id="modal-task-allday" checked
-                                            style="width: 20px; height: 20px;">
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div id="modal-task-time-row" class="form__row"
-                                style="display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                                <label class="form__field">
-                                    <span class="form__label">Hora inicio</span>
-                                    <input type="time" id="modal-task-time-start" class="form__input" value="09:00">
-                                </label>
-                                <label class="form__field">
-                                    <span class="form__label">Hora fin</span>
-                                    <input type="time" id="modal-task-time-end" class="form__input" value="10:00">
-                                </label>
-                            </div>
-
-                            <div class="form__actions" style="margin-top:1.5rem;">
-                                <button type="submit" class="btn btn--primary" id="btn-save-modal-task">📋 Guardar
-                                    nota</button>
-                                <button type="button" class="btn btn--ghost"
-                                    id="btn-cancel-modal-task">Cancelar</button>
-                            </div>
-                        </form>
-
-                        <!-- FORM AGENDA DE CITAS -->
-                        <form id="form-cita" class="form" style="display:none;">
-                            <label class="form__field">
-                                <span class="form__label">Título de los bloques</span>
-                                <input type="text" id="cita-title" class="form__input"
-                                    placeholder="Ej: Consulta, Clase, Estudio..." required>
-                            </label>
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">📍 Ubicación</span>
-                                <input type="text" id="cita-location" class="form__input"
-                                    placeholder="Dirección para los bloques">
-                            </label>
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">Fecha</span>
-                                <input type="date" id="cita-date" class="form__input" required>
-                            </label>
-                            <div class="form__row" style="margin-top:10px;">
-                                <label class="form__field">
-                                    <span class="form__label">Desde</span>
-                                    <input type="time" id="cita-time-start" class="form__input" value="10:00">
-                                </label>
-                                <label class="form__field">
-                                    <span class="form__label">Hasta</span>
-                                    <input type="time" id="cita-time-end" class="form__input" value="12:00">
-                                </label>
-                            </div>
-
-                            <div class="form__actions" style="margin-top:1.5rem;">
-                                <button type="submit" class="btn btn--primary" id="btn-save-cita">🕒 Generar
-                                    Agenda</button>
-                                <button type="button" class="btn btn--ghost" id="btn-cancel-cita">Cancelar</button>
-                            </div>
-                            <div id="cita-result" class="form__result"></div>
-                        </form>
-
-                        <!-- FORM COMUNICADOS -->
-                        <form id="form-comunicado" class="form" style="display:none;">
+                        <div class="form__row"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                             <label class="form__field">
                                 <span class="form__label">Fecha</span>
-                                <input type="date" id="comunicado-date" class="form__input" required>
+                                <input type="date" id="modal-task-date" class="form__input" required>
                             </label>
-
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">Título (Ej: Visita al Pediatra)</span>
-                                <input type="text" id="comunicado-title" class="form__input"
-                                    placeholder="¿De qué trata?" required>
-                            </label>
-
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">Detalles / Notas</span>
-                                <textarea id="comunicado-desc" class="form__input" rows="4"
-                                    placeholder="Escribe aquí todo lo importante..."></textarea>
-                            </label>
-
-                            <label class="form__field" style="margin-top:10px;">
-                                <span class="form__label">Archivo adjunto (Receta, PDF notas...)</span>
-                                <input type="file" id="comunicado-file" class="form__input" accept="image/*,.pdf"
-                                    style="padding:4px;">
-                            </label>
-
-                            <!-- Barra de progreso para subida -->
-                            <div id="comunicado-upload-progress"
-                                style="display:none; margin-top:10px; font-size:0.85rem; color:var(--text-muted); text-align:center;">
-                                <div class="spinner"
-                                    style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:5px;">
+                            <label class="form__field">
+                                <span class="form__label">¿Todo el día?</span>
+                                <div style="display: flex; align-items: center; height: 38px;">
+                                    <input type="checkbox" id="modal-task-allday" checked
+                                        style="width: 20px; height: 20px;">
                                 </div>
-                                <span id="comunicado-progress-text">Subiendo archivo a Google Drive...</span>
-                            </div>
+                            </label>
+                        </div>
 
-                            <div class="form__actions" style="margin-top:1.5rem;">
-                                <button type="submit" id="btn-save-comunicado" class="btn btn--primary"
-                                    style="width:100%;">
-                                    <span>💾</span> Guardar Comunicado
-                                </button>
-                            </div>
-                        </form>
+                        <div id="modal-task-time-row" class="form__row"
+                            style="display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <label class="form__field">
+                                <span class="form__label">Hora inicio</span>
+                                <input type="time" id="modal-task-time-start" class="form__input" value="09:00">
+                            </label>
+                            <label class="form__field">
+                                <span class="form__label">Hora fin</span>
+                                <input type="time" id="modal-task-time-end" class="form__input" value="10:00">
+                            </label>
+                        </div>
 
-                    </div>
+                        <div class="form__actions" style="margin-top:1.5rem;">
+                            <button type="submit" class="btn btn--primary" id="btn-save-modal-task">📋 Guardar
+                                nota</button>
+                            <button type="button" class="btn btn--ghost" id="btn-cancel-modal-task">Cancelar</button>
+                        </div>
+                    </form>
+
+                    <!-- FORM AGENDA DE CITAS -->
+                    <form id="form-cita" class="form" style="display:none;">
+                        <label class="form__field">
+                            <span class="form__label">Título de los bloques</span>
+                            <input type="text" id="cita-title" class="form__input"
+                                placeholder="Ej: Consulta, Clase, Estudio..." required>
+                        </label>
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">📍 Ubicación</span>
+                            <input type="text" id="cita-location" class="form__input"
+                                placeholder="Dirección para los bloques">
+                        </label>
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Fecha</span>
+                            <input type="date" id="cita-date" class="form__input" required>
+                        </label>
+                        <div class="form__row" style="margin-top:10px;">
+                            <label class="form__field">
+                                <span class="form__label">Desde</span>
+                                <input type="time" id="cita-time-start" class="form__input" value="10:00">
+                            </label>
+                            <label class="form__field">
+                                <span class="form__label">Hasta</span>
+                                <input type="time" id="cita-time-end" class="form__input" value="12:00">
+                            </label>
+                        </div>
+
+                        <div class="form__actions" style="margin-top:1.5rem;">
+                            <button type="submit" class="btn btn--primary" id="btn-save-cita">🕒 Generar
+                                Agenda</button>
+                            <button type="button" class="btn btn--ghost" id="btn-cancel-cita">Cancelar</button>
+                        </div>
+                        <div id="cita-result" class="form__result"></div>
+                    </form>
+
+                    <!-- FORM COMUNICADOS -->
+                    <form id="form-comunicado" class="form" style="display:none;">
+                        <label class="form__field">
+                            <span class="form__label">Fecha</span>
+                            <input type="date" id="comunicado-date" class="form__input" required>
+                        </label>
+
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Título (Ej: Visita al Pediatra)</span>
+                            <input type="text" id="comunicado-title" class="form__input" placeholder="¿De qué trata?"
+                                required>
+                        </label>
+
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Detalles / Notas</span>
+                            <textarea id="comunicado-desc" class="form__input" rows="4"
+                                placeholder="Escribe aquí todo lo importante..."></textarea>
+                        </label>
+
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Archivo adjunto (Receta, PDF notas...)</span>
+                            <input type="file" id="comunicado-file" class="form__input" accept="image/*,.pdf"
+                                style="padding:4px;">
+                        </label>
+
+                        <!-- Barra de progreso para subida -->
+                        <div id="comunicado-upload-progress"
+                            style="display:none; margin-top:10px; font-size:0.85rem; color:var(--text-muted); text-align:center;">
+                            <div class="spinner"
+                                style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:5px;">
+                            </div>
+                            <span id="comunicado-progress-text">Subiendo archivo a Google Drive...</span>
+                        </div>
+
+                        <div class="form__actions" style="margin-top:1.5rem;">
+                            <button type="submit" id="btn-save-comunicado" class="btn btn--primary" style="width:100%;">
+                                <span>💾</span> Guardar Comunicado
+                            </button>
+                        </div>
+                    </form>
+
                 </div>
+            </div>
             </section>
 
         </main>
@@ -777,7 +774,7 @@
         </footer>
     </div>
 
-    <script src="assets/app.js?v=4.8"></script>
+    <script src="assets/app.js?v=4.9"></script>
 </body>
 
 </html>
