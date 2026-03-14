@@ -66,7 +66,7 @@ class ApiController
         $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
 
         $this->getComunicadosUseCase = new \GastosNaia\Application\GetComunicadosUseCase();
-        $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase($this->receiptRepository);
+        $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase(__DIR__ . '/../../');
         $this->saveComunicadoUseCase = new \GastosNaia\Application\SaveComunicadoUseCase();
 
         $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
@@ -262,11 +262,7 @@ class ApiController
                     if (empty($_FILES['file'])) {
                         throw new \Exception('No se recibió ningún archivo adjunto.');
                     }
-                    $folderId = $this->config['comunicados_drive_folder_id'] ?? '';
-                    if (empty($folderId)) {
-                        throw new \Exception('Falta configurar comunicados_drive_folder_id en config.php');
-                    }
-                    $url = $this->uploadComunicadoFileUseCase->execute($_FILES['file'], $folderId);
+                    $url = $this->uploadComunicadoFileUseCase->execute($_FILES['file']);
                     $this->jsonResponse(['success' => true, 'url' => $url]);
                     break;
 
