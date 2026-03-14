@@ -1159,6 +1159,8 @@
         $formEvento.style.display = 'none';
         $formTarea.style.display = 'none';
         if ($formCita) $formCita.style.display = 'none';
+        const $formComunicado = document.getElementById('form-comunicado');
+        if ($formComunicado) $formComunicado.style.display = 'none';
         editingEventId = editEv ? editEv.id : null;
         editingEventSource = editEv ? (editEv.isLocal ? 'local' : 'gcal') : null;
 
