@@ -145,7 +145,6 @@
         if (name === 'anual') loadAnnual();
         if (name === 'mensual') loadMonthly();
         if (name === 'gastos') loadExpenses();
-        if (name === 'calendario') initCalendarView();
         if (name === 'comunicados') loadComunicados();
     }
 
