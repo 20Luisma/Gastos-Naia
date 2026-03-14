@@ -729,30 +729,37 @@
                                 <span class="form__label">Fecha</span>
                                 <input type="date" id="comunicado-date" class="form__input" required>
                             </label>
-                            
+
                             <label class="form__field" style="margin-top:10px;">
                                 <span class="form__label">Título (Ej: Visita al Pediatra)</span>
-                                <input type="text" id="comunicado-title" class="form__input" placeholder="¿De qué trata?" required>
+                                <input type="text" id="comunicado-title" class="form__input"
+                                    placeholder="¿De qué trata?" required>
                             </label>
-                            
+
                             <label class="form__field" style="margin-top:10px;">
                                 <span class="form__label">Detalles / Notas</span>
-                                <textarea id="comunicado-desc" class="form__input" rows="4" placeholder="Escribe aquí todo lo importante..."></textarea>
+                                <textarea id="comunicado-desc" class="form__input" rows="4"
+                                    placeholder="Escribe aquí todo lo importante..."></textarea>
                             </label>
-                            
+
                             <label class="form__field" style="margin-top:10px;">
                                 <span class="form__label">Archivo adjunto (Receta, PDF notas...)</span>
-                                <input type="file" id="comunicado-file" class="form__input" accept="image/*,.pdf" style="padding:4px;">
+                                <input type="file" id="comunicado-file" class="form__input" accept="image/*,.pdf"
+                                    style="padding:4px;">
                             </label>
-                            
+
                             <!-- Barra de progreso para subida -->
-                            <div id="comunicado-upload-progress" style="display:none; margin-top:10px; font-size:0.85rem; color:var(--text-muted); text-align:center;">
-                                <div class="spinner" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:5px;"></div>
+                            <div id="comunicado-upload-progress"
+                                style="display:none; margin-top:10px; font-size:0.85rem; color:var(--text-muted); text-align:center;">
+                                <div class="spinner"
+                                    style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:5px;">
+                                </div>
                                 <span id="comunicado-progress-text">Subiendo archivo a Google Drive...</span>
                             </div>
 
                             <div class="form__actions" style="margin-top:1.5rem;">
-                                <button type="submit" id="btn-save-comunicado" class="btn btn--primary" style="width:100%;">
+                                <button type="submit" id="btn-save-comunicado" class="btn btn--primary"
+                                    style="width:100%;">
                                     <span>💾</span> Guardar Comunicado
                                 </button>
                             </div>
@@ -770,7 +777,7 @@
         </footer>
     </div>
 
-    <script src="assets/app.js?v=4.5"></script>
+    <script src="assets/app.js?v=4.6"></script>
 </body>
 
 </html>
