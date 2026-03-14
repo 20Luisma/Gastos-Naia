@@ -43,32 +43,26 @@ class ApiController
     {
         $this->config = $config;
 
-        try {
-            $client = $this->createGoogleClient();
-            $rawRepository = new GoogleSheetsExpenseRepository($client, $config);
-            $cache = new FileCache(__DIR__ . '/../../../cache', ttl: 300);
-            $this->expenseRepository = new CachedExpenseRepository($rawRepository, $cache);
-            $this->receiptRepository = new GoogleDriveReceiptRepository($client, $config);
+        $client = $this->createGoogleClient();
 
-            $this->getExpensesUseCase = new GetExpensesUseCase($this->expenseRepository, $this->receiptRepository);
-            $this->uploadReceiptUseCase = new UploadReceiptUseCase($this->receiptRepository);
-        } catch (\Exception $e) {
-            error_log("Google Client initialization skipped: " . $e->getMessage());
-            // Estos quedarán como null o lanzarán error al usarse si no hay Google
-        }
+        $rawRepository = new GoogleSheetsExpenseRepository($client, $config);
+        $cache = new FileCache(__DIR__ . '/../../../cache', ttl: 300);
+        $this->expenseRepository = new CachedExpenseRepository($rawRepository, $cache);
+        $this->receiptRepository = new GoogleDriveReceiptRepository($client, $config);
 
         $firebaseService = new \GastosNaia\Infrastructure\FirebaseBackupService();
+
+        $this->getExpensesUseCase = new GetExpensesUseCase($this->expenseRepository, $this->receiptRepository);
+        $this->addExpenseUseCase = new AddExpenseUseCase($this->expenseRepository, $firebaseService);
+        $this->editExpenseUseCase = new EditExpenseUseCase($this->expenseRepository, $firebaseService);
+        $this->deleteExpenseUseCase = new DeleteExpenseUseCase($this->expenseRepository, $firebaseService);
+        $this->uploadReceiptUseCase = new UploadReceiptUseCase($this->receiptRepository);
+        $this->deleteReceiptUseCase = new DeleteReceiptUseCase($this->receiptRepository, $firebaseService);
+
         $firebaseWriteRepo = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
+        $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
+
         $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
-
-        if (isset($this->expenseRepository)) {
-            $this->addExpenseUseCase = new AddExpenseUseCase($this->expenseRepository, $firebaseService);
-            $this->editExpenseUseCase = new EditExpenseUseCase($this->expenseRepository, $firebaseService);
-            $this->deleteExpenseUseCase = new DeleteExpenseUseCase($this->expenseRepository, $firebaseService);
-            $this->deleteReceiptUseCase = new DeleteReceiptUseCase($this->receiptRepository, $firebaseService);
-            $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
-        }
-
         $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($firebaseReadRepo);
         $this->scanReceiptUseCase = new \GastosNaia\Application\ScanReceiptUseCase();
     }
