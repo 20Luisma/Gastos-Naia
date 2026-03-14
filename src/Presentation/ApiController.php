@@ -24,19 +24,19 @@ class ApiController
     private array $config;
 
     // Use cases
-    private GetExpensesUseCase $getExpensesUseCase;
-    private AddExpenseUseCase $addExpenseUseCase;
-    private EditExpenseUseCase $editExpenseUseCase;
-    private DeleteExpenseUseCase $deleteExpenseUseCase;
-    private UploadReceiptUseCase $uploadReceiptUseCase;
-    private DeleteReceiptUseCase $deleteReceiptUseCase;
-    private SetPensionUseCase $setPensionUseCase;
-    private \GastosNaia\Application\AskAiUseCase $askAiUseCase;
-    private \GastosNaia\Application\ScanReceiptUseCase $scanReceiptUseCase;
+    private ?GetExpensesUseCase $getExpensesUseCase = null;
+    private ?AddExpenseUseCase $addExpenseUseCase = null;
+    private ?EditExpenseUseCase $editExpenseUseCase = null;
+    private ?DeleteExpenseUseCase $deleteExpenseUseCase = null;
+    private ?UploadReceiptUseCase $uploadReceiptUseCase = null;
+    private ?DeleteReceiptUseCase $deleteReceiptUseCase = null;
+    private ?SetPensionUseCase $setPensionUseCase = null;
+    private ?\GastosNaia\Application\AskAiUseCase $askAiUseCase = null;
+    private ?\GastosNaia\Application\ScanReceiptUseCase $scanReceiptUseCase = null;
 
     // Repositories
-    private CachedExpenseRepository $expenseRepository;
-    private GoogleDriveReceiptRepository $receiptRepository;
+    private ?CachedExpenseRepository $expenseRepository = null;
+    private ?GoogleDriveReceiptRepository $receiptRepository = null;
     private ?GoogleCalendarRepository $calendarRepository = null;
 
     public function __construct(array $config)
