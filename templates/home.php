@@ -71,7 +71,7 @@
                 <!-- Comunicados -->
                 <button class="nav__btn" data-view="comunicados" title="Diario y Comunicados">
                     <span class="nav__btn-icon">📝</span>
-                    <span>Comunicados</span>
+                    <span>Diario de Naia</span>
                 </button>
 
 
