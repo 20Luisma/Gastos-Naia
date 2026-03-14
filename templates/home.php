@@ -68,6 +68,13 @@
                     <span>Calendario</span>
                 </button>
 
+                <!-- Comunicados -->
+                <button class="nav__btn" data-view="comunicados" title="Diario y Comunicados">
+                    <span class="nav__btn-icon">📝</span>
+                    <span>Comunicados</span>
+                </button>
+
+
                 <!-- Agente IA Alfred (Derecha) -->
                 <button class="nav__btn nav__btn--ai" data-view="ai" title="Agente IA Alfred">
                     <span class="nav__btn-icon">🤖</span>
@@ -522,6 +529,27 @@
 
                 </div>
 
+                <!-- ═══ Vista: Comunicados ═══ -->
+                <section id="view-comunicados" class="view" style="display:none; padding: 20px;">
+                    <div class="comunicados-header"
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+                        <h2 class="view-title"
+                            style="margin:0; font-size:1.5rem; color:var(--text); display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:1.8rem;">📝</span> Diario de Naia
+                        </h2>
+                        <button id="btn-add-comunicado" class="btn btn--primary"
+                            style="display:flex; align-items:center; gap:8px;">
+                            <span>➕</span> Nuevo Comunicado
+                        </button>
+                    </div>
+
+                    <div id="comunicados-timeline" class="comunicados-timeline"
+                        style="max-width: 800px; margin: 0 auto; position:relative;">
+                        <!-- Las tarjetas se inyectarán aquí vía JS -->
+                    </div>
+                </section>
+
+
                 <!-- Modal Nuevo Evento / Tarea (se muestra como popup centrado) -->
                 <div id="gcal-modal-overlay" class="gcal-modal-overlay" style="display:none;">
                     <div class="gcal-modal" id="gcal-modal">
@@ -695,6 +723,41 @@
                             <div id="cita-result" class="form__result"></div>
                         </form>
 
+                        <!-- FORM COMUNICADOS -->
+                        <form id="form-comunicado" class="form" style="display:none;">
+                            <label class="form__field">
+                                <span class="form__label">Fecha</span>
+                                <input type="date" id="comunicado-date" class="form__input" required>
+                            </label>
+                            
+                            <label class="form__field" style="margin-top:10px;">
+                                <span class="form__label">Título (Ej: Visita al Pediatra)</span>
+                                <input type="text" id="comunicado-title" class="form__input" placeholder="¿De qué trata?" required>
+                            </label>
+                            
+                            <label class="form__field" style="margin-top:10px;">
+                                <span class="form__label">Detalles / Notas</span>
+                                <textarea id="comunicado-desc" class="form__input" rows="4" placeholder="Escribe aquí todo lo importante..."></textarea>
+                            </label>
+                            
+                            <label class="form__field" style="margin-top:10px;">
+                                <span class="form__label">Archivo adjunto (Receta, PDF notas...)</span>
+                                <input type="file" id="comunicado-file" class="form__input" accept="image/*,.pdf" style="padding:4px;">
+                            </label>
+                            
+                            <!-- Barra de progreso para subida -->
+                            <div id="comunicado-upload-progress" style="display:none; margin-top:10px; font-size:0.85rem; color:var(--text-muted); text-align:center;">
+                                <div class="spinner" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:5px;"></div>
+                                <span id="comunicado-progress-text">Subiendo archivo a Google Drive...</span>
+                            </div>
+
+                            <div class="form__actions" style="margin-top:1.5rem;">
+                                <button type="submit" id="btn-save-comunicado" class="btn btn--primary" style="width:100%;">
+                                    <span>💾</span> Guardar Comunicado
+                                </button>
+                            </div>
+                        </form>
+
                     </div>
                 </div>
             </section>
@@ -707,7 +770,7 @@
         </footer>
     </div>
 
-    <script src="assets/app.js?v=4.4"></script>
+    <script src="assets/app.js?v=4.5"></script>
 </body>
 
 </html>

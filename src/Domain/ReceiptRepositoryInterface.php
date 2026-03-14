@@ -26,4 +26,12 @@ interface ReceiptRepositoryInterface
      * @return bool
      */
     public function deleteReceipt(string $filePath): bool;
+
+    /**
+     * @param string $localFilePath
+     * @param string $originalName
+     * @param string $folderId
+     * @return string The web view link
+     */
+    public function uploadFileToFolder(string $localFilePath, string $originalName, string $folderId): string;
 }

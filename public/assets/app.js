@@ -124,6 +124,8 @@
         gastos: document.getElementById('view-gastos'),
         'nuevo-anio': document.getElementById('section-nuevo-anio'),
         ai: document.getElementById('view-ai'),
+        calendario: document.getElementById('view-calendario'),
+        comunicados: document.getElementById('view-comunicados')
     };
 
     function switchView(name) {
@@ -131,6 +133,11 @@
         Object.entries(views).forEach(([key, el]) => {
             if (el) el.style.display = key === name ? 'block' : 'none';
         });
+
+        // Hide special Google Calendar view if not selected
+        const calView = document.getElementById('view-calendario');
+        if (calView) calView.style.display = (name === 'calendario') ? 'flex' : 'none';
+
         document.querySelectorAll('.nav__btn, .nav-dropdown__item').forEach(btn => {
             btn.classList.toggle('nav__btn--active', btn.dataset.view === name);
         });
@@ -138,7 +145,10 @@
         if (name === 'anual') loadAnnual();
         if (name === 'mensual') loadMonthly();
         if (name === 'gastos') loadExpenses();
+        if (name === 'calendario') initCalendarView();
+        if (name === 'comunicados') loadComunicados();
     }
+
 
     document.querySelectorAll('.nav__btn, .nav-dropdown__item').forEach(btn => {
         btn.addEventListener('click', () => switchView(btn.dataset.view));
@@ -1858,5 +1868,172 @@
     // Init
     updateMainHeader();
     renderMiniCal();
+
+})();
+
+    // ──────────────────────────────────────────────
+    //  Vista: Comunicados (Diario de Naia)
+    // ──────────────────────────────────────────────
+    
+    const viewComunicados = document.getElementById('view-comunicados');
+    const timelineContainer = document.getElementById('comunicados-timeline');
+    const btnAddComunicado = document.getElementById('btn-add-comunicado');
+    const formComunicado = document.getElementById('form-comunicado');
+    const uploadProgress = document.getElementById('comunicado-upload-progress');
+
+    if (btnAddComunicado) {
+        btnAddComunicado.addEventListener('click', () => {
+            // Reutilizamos el modal general
+            document.getElementById('gcal-modal-title').textContent = 'Nuevo Comunicado';
+            document.getElementById('gcal-modal-title-icon').textContent = '📝';
+            
+            // Ocultar forms de calendario
+            document.getElementById('cal-event-form').style.display = 'none';
+            document.getElementById('modal-task-form').style.display = 'none';
+            document.getElementById('form-cita').style.display = 'none';
+            
+            // Mostrar nuestro form y resetear
+            formComunicado.reset();
+            formComunicado.style.display = 'block';
+            uploadProgress.style.display = 'none';
+            
+            // Fecha de hoy por defecto
+            document.getElementById('comunicado-date').value = new Date().toISOString().split('T')[0];
+            
+            document.getElementById('gcal-modal-overlay').style.display = 'flex';
+        });
+    }
+
+    async function loadComunicados() {
+        showLoading();
+        try {
+            const data = await api('getComunicados');
+            renderComunicadosTimeline(data);
+        } catch (e) {
+            showError("No se pudieron cargar los comunicados: " + e.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function renderComunicadosTimeline(items) {
+        if (!timelineContainer) return;
+
+        if (!items || items.length === 0) {
+            timelineContainer.innerHTML = `
+                <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+                    <div style="font-size:3rem; margin-bottom:10px;">📭</div>
+                    <p>Aún no hay comunicados ni notas registradas.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        items.forEach(item => {
+            // Helper para formatear fecha (YYYY-MM-DD -> DD/MM/YYYY)
+            const d = new Date(item.date);
+            const dateStr = d.toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'short', day:'numeric' });
+            
+            let fileAttachmentHtml = '';
+            if (item.fileUrl) {
+                const icon = fileIcon(item.fileType?.toLowerCase() || 'pdf');
+                fileAttachmentHtml = `
+                    <div style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display:inline-flex; align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.1);">
+                        <span style="font-size:1.5rem;">${icon}</span>
+                        <div style="display:flex; flex-direction:column; max-width:200px;">
+                            <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.fileName || 'Documento adjunto')}</span>
+                            <a href="${item.fileUrl}" target="_blank" style="font-size:0.75rem; color: var(--accent); text-decoration:none;">🔗 Abrir documento</a>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="comunicado-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position:relative;">
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
+                        <h3 style="margin:0; font-size:1.2rem; color:var(--text);">${escapeHtml(item.title)}</h3>
+                        <span style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">📝 Diario</span>
+                    </div>
+                    
+                    <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px; display:flex; gap:8px; align-items:center;">
+                        <span>📅</span> <span style="text-transform: capitalize;">${dateStr}</span>
+                    </div>
+                    
+                    ${item.description ? `<div style="color: var(--text); font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">${escapeHtml(item.description)}</div>` : ''}
+                    
+                    ${fileAttachmentHtml}
+                </div>
+            `;
+        });
+
+        timelineContainer.innerHTML = html;
+    }
+
+    if (formComunicado) {
+        formComunicado.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btnSave = document.getElementById('btn-save-comunicado');
+            const date = document.getElementById('comunicado-date').value;
+            const title = document.getElementById('comunicado-title').value;
+            const desc = document.getElementById('comunicado-desc').value;
+            const fileInput = document.getElementById('comunicado-file');
+            
+            btnSave.disabled = true;
+            btnSave.style.opacity = '0.5';
+            
+            let fileUrl = null;
+            let fileName = null;
+            let fileType = null;
+            
+            try {
+                // 1. Si hay archivo, lo subimos primero a Drive
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    fileName = file.name;
+                    fileType = file.name.split('.').pop();
+                    
+                    uploadProgress.style.display = 'block';
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    // Fetch directo especial para subida de comunicado
+                    const res = await fetch('?action=uploadComunicado', { method: 'POST', body: formData });
+                    const json = await res.json();
+                    
+                    if (json.error) throw new Error(json.error);
+                    fileUrl = json.url;
+                }
+                
+                // 2. Guardamos todo en Firebase
+                uploadProgress.style.display = 'none';
+                
+                await apiPost('saveComunicado', {
+                    date: date,
+                    title: title,
+                    description: desc,
+                    fileUrl: fileUrl,
+                    fileName: fileName,
+                    fileType: fileType
+                });
+                
+                showToast('¡Comunicado guardado con éxito!');
+                document.getElementById('gcal-modal-overlay').style.display = 'none';
+                
+                // Recargar el timeline
+                loadComunicados();
+                
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+                uploadProgress.style.display = 'none';
+            } finally {
+                btnSave.disabled = false;
+                btnSave.style.opacity = '1';
+            }
+        });
+    }
 
 })();

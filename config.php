@@ -66,6 +66,9 @@ return [
     'template_spreadsheet_id' => '1AmJuPthX2wzv0KkQhSAjDP3AhDQVBRz5vhcKZU6yKIM',
     // La carpeta "Naia General" en Drive donde se crearán las subcarpetas de años y se guardarán copiados los Sheets
     'root_drive_folder_id' => '1n9Tu-GyUglfBhfdThNHR7LV833y02GVp',
+    // La carpeta donde se subirán los archivos adjuntos de la sección Comunicados
+    'comunicados_drive_folder_id' => '1fRxelmPjaVXNBQd8gFe6XIKkUop6dTKH',
+
 
     // ── Spreadsheets por año ──
     'spreadsheets' => [

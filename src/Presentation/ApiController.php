@@ -33,6 +33,9 @@ class ApiController
     private ?SetPensionUseCase $setPensionUseCase = null;
     private ?\GastosNaia\Application\AskAiUseCase $askAiUseCase = null;
     private ?\GastosNaia\Application\ScanReceiptUseCase $scanReceiptUseCase = null;
+    private ?\GastosNaia\Application\GetComunicadosUseCase $getComunicadosUseCase = null;
+    private ?\GastosNaia\Application\UploadComunicadoFileUseCase $uploadComunicadoFileUseCase = null;
+    private ?\GastosNaia\Application\SaveComunicadoUseCase $saveComunicadoUseCase = null;
 
     // Repositories
     private ?CachedExpenseRepository $expenseRepository = null;
@@ -61,6 +64,10 @@ class ApiController
 
         $firebaseWriteRepo = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
         $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
+
+        $this->getComunicadosUseCase = new \GastosNaia\Application\GetComunicadosUseCase();
+        $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase($this->receiptRepository);
+        $this->saveComunicadoUseCase = new \GastosNaia\Application\SaveComunicadoUseCase();
 
         $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
         $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($firebaseReadRepo);
@@ -243,6 +250,44 @@ class ApiController
                     );
                     $this->jsonResponse(['success' => $success]);
                     break;
+
+                // ── COMUNICADOS ──
+                case 'getComunicados':
+                    $comunicados = $this->getComunicadosUseCase->execute();
+                    $this->jsonResponse($comunicados);
+                    break;
+
+                case 'uploadComunicado':
+                    $this->requirePost();
+                    if (empty($_FILES['file'])) {
+                        throw new \Exception('No se recibió ningún archivo adjunto.');
+                    }
+                    $folderId = $this->config['comunicados_drive_folder_id'] ?? '';
+                    if (empty($folderId)) {
+                        throw new \Exception('Falta configurar comunicados_drive_folder_id en config.php');
+                    }
+                    $url = $this->uploadComunicadoFileUseCase->execute($_FILES['file'], $folderId);
+                    $this->jsonResponse(['success' => true, 'url' => $url]);
+                    break;
+
+                case 'saveComunicado':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    if (empty($input['title']) || empty($input['date'])) {
+                        throw new \Exception('El título y la fecha son obligatorios.');
+                    }
+
+                    $id = $this->saveComunicadoUseCase->execute(
+                        $input['date'],
+                        $input['title'],
+                        $input['description'] ?? '',
+                        $input['fileUrl'] ?? null,
+                        $input['fileType'] ?? null,
+                        $input['fileName'] ?? null
+                    );
+                    $this->jsonResponse(['success' => true, 'id' => $id]);
+                    break;
+
 
                 case 'scan_receipt':
                     $this->requirePost();

@@ -109,6 +109,28 @@ class GoogleDriveReceiptRepository implements ReceiptRepositoryInterface
         ];
     }
 
+    public function uploadFileToFolder(string $localFilePath, string $originalName, string $folderId): string
+    {
+        $fileMetadata = new DriveFile([
+            'name' => $originalName,
+            'parents' => [$folderId]
+        ]);
+
+        $content = file_get_contents($localFilePath);
+        $mimeType = mime_content_type($localFilePath) ?: 'application/octet-stream';
+
+        $file = $this->drive->files->create($fileMetadata, [
+            'data' => $content,
+            'mimeType' => $mimeType,
+            'uploadType' => 'multipart',
+            'fields' => 'id, webViewLink',
+            'supportsAllDrives' => true,
+        ]);
+
+        return $file->getWebViewLink();
+    }
+
+
     public function listReceipts(int $year, int $month): array
     {
         try {
