@@ -722,7 +722,8 @@
                     </form>
 
                     <!-- FORM COMUNICADOS -->
-                    <form id="form-comunicado" class="form" style="display:none;">
+                    <form id="form-comunicado" class="form" style="display:none;" enctype="multipart/form-data">
+                        <input type="hidden" id="comunicado-id">
                         <label class="form__field">
                             <span class="form__label">Fecha</span>
                             <input type="date" id="comunicado-date" class="form__input" required>
@@ -774,7 +775,7 @@
         </footer>
     </div>
 
-    <script src="assets/app.js?v=4.9"></script>
+    <script src="assets/app.js?v=5.0"></script>
 </body>
 
 </html>

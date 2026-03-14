@@ -33,9 +33,10 @@ class ApiController
     private ?SetPensionUseCase $setPensionUseCase = null;
     private ?\GastosNaia\Application\AskAiUseCase $askAiUseCase = null;
     private ?\GastosNaia\Application\ScanReceiptUseCase $scanReceiptUseCase = null;
-    private ?\GastosNaia\Application\GetComunicadosUseCase $getComunicadosUseCase = null;
-    private ?\GastosNaia\Application\UploadComunicadoFileUseCase $uploadComunicadoFileUseCase = null;
-    private ?\GastosNaia\Application\SaveComunicadoUseCase $saveComunicadoUseCase = null;
+    private \GastosNaia\Application\GetComunicadosUseCase $getComunicadosUseCase;
+    private \GastosNaia\Application\UploadComunicadoFileUseCase $uploadComunicadoFileUseCase;
+    private \GastosNaia\Application\SaveComunicadoUseCase $saveComunicadoUseCase;
+    private \GastosNaia\Application\DeleteComunicadoUseCase $deleteComunicadoUseCase;
 
     // Repositories
     private ?CachedExpenseRepository $expenseRepository = null;
@@ -68,6 +69,7 @@ class ApiController
         $this->getComunicadosUseCase = new \GastosNaia\Application\GetComunicadosUseCase();
         $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase(__DIR__ . '/../../');
         $this->saveComunicadoUseCase = new \GastosNaia\Application\SaveComunicadoUseCase();
+        $this->deleteComunicadoUseCase = new \GastosNaia\Application\DeleteComunicadoUseCase(__DIR__ . '/../../');
 
         $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
         $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($firebaseReadRepo);
@@ -279,9 +281,20 @@ class ApiController
                         $input['description'] ?? '',
                         $input['fileUrl'] ?? null,
                         $input['fileType'] ?? null,
-                        $input['fileName'] ?? null
+                        $input['fileName'] ?? null,
+                        $input['id'] ?? null
                     );
                     $this->jsonResponse(['success' => true, 'id' => $id]);
+                    break;
+
+                case 'deleteComunicado':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    if (empty($input['id'])) {
+                        throw new \Exception('El ID es obligatorio para eliminar.');
+                    }
+                    $success = $this->deleteComunicadoUseCase->execute($input['id']);
+                    $this->jsonResponse(['success' => $success]);
                     break;
 
 

@@ -1937,46 +1937,124 @@
             return;
         }
 
-        let html = '';
+        // Agrupar por mes/año
+        const groups = {};
         items.forEach(item => {
-            // Helper para formatear fecha (YYYY-MM-DD -> DD/MM/YYYY)
             const d = new Date(item.date);
-            const dateStr = d.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
-
-            let fileAttachmentHtml = '';
-            if (item.fileUrl) {
-                const icon = fileIcon(item.fileType?.toLowerCase() || 'pdf');
-                fileAttachmentHtml = `
-                    <div style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display:inline-flex; align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.1);">
-                        <span style="font-size:1.5rem;">${icon}</span>
-                        <div style="display:flex; flex-direction:column; max-width:200px;">
-                            <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.fileName || 'Documento adjunto')}</span>
-                            <a href="${item.fileUrl}" target="_blank" style="font-size:0.75rem; color: var(--accent); text-decoration:none;">🔗 Abrir documento</a>
-                        </div>
-                    </div>
-                `;
-            }
-
-            html += `
-                <div class="comunicado-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position:relative;">
-                    
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
-                        <h3 style="margin:0; font-size:1.2rem; color:var(--text);">${escapeHtml(item.title)}</h3>
-                        <span style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">📝 Diario</span>
-                    </div>
-                    
-                    <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px; display:flex; gap:8px; align-items:center;">
-                        <span>📅</span> <span style="text-transform: capitalize;">${dateStr}</span>
-                    </div>
-                    
-                    ${item.description ? `<div style="color: var(--text); font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">${escapeHtml(item.description)}</div>` : ''}
-                    
-                    ${fileAttachmentHtml}
-                </div>
-            `;
+            const monthName = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            const monthCap = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            if (!groups[monthCap]) groups[monthCap] = [];
+            groups[monthCap].push(item);
         });
 
+        let html = '';
+
+        for (const [month, monthItems] of Object.entries(groups)) {
+            // Cabecera de Mes
+            html += `
+                <div style="margin: 30px 0 15px 0; border-left: 4px solid var(--primary); padding-left: 15px; display: flex; align-items:center; gap: 10px;">
+                    <span style="font-size: 1.4rem;">📅</span>
+                    <h2 style="margin:0; font-size: 1.25rem; font-weight:700; color: var(--text);">${month}</h2>
+                </div>
+            `;
+
+            monthItems.forEach(item => {
+                const d = new Date(item.date);
+                const dateStr = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
+                const timeStr = d.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+
+                let fileAttachmentHtml = '';
+                if (item.fileUrl) {
+                    const icon = fileIcon(item.fileType?.toLowerCase() || 'pdf');
+                    fileAttachmentHtml = `
+                        <div style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display:inline-flex; align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.1);">
+                            <span style="font-size:1.5rem;">${icon}</span>
+                            <div style="display:flex; flex-direction:column; max-width:200px;">
+                                <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.fileName || 'Documento adjunto')}</span>
+                                <a href="${item.fileUrl}" target="_blank" style="font-size:0.75rem; color: var(--accent); text-decoration:none;">🔗 Ver adjunto</a>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="comunicado-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
+                            <div>
+                                <h3 style="margin:0; font-size:1.2rem; color:var(--text);">${escapeHtml(item.title)}</h3>
+                                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; text-transform: capitalize;">
+                                    ${dateStr}
+                                </div>
+                            </div>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn-icon" onclick="window.gastosNaia.editComunicado('${item.id}')" title="Editar" style="background: rgba(255,255,255,0.05); border:0; color:var(--text-muted); width:32px; height:32px; border-radius:6px; cursor:pointer;">✏️</button>
+                                <button class="btn-icon" onclick="window.gastosNaia.deleteComunicado('${item.id}')" title="Eliminar" style="background: rgba(255,255,255,0.05); border:0; color:var(--danger); width:32px; height:32px; border-radius:6px; cursor:pointer;">🗑️</button>
+                            </div>
+                        </div>
+                        
+                        ${item.description ? `<div style="color: var(--text); font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; background: rgba(0,0,0,0.15); padding: 12px; border-radius: 8px;">${escapeHtml(item.description)}</div>` : ''}
+                        
+                        ${fileAttachmentHtml}
+                    </div>
+                `;
+            });
+        }
+
         timelineContainer.innerHTML = html;
+        // Guardar items para edición rápida
+        window.gastosNaia.comunicadosItems = items;
+    }
+
+    // Exponer funciones globales para los botones onclick
+    window.gastosNaia = window.gastosNaia || {};
+
+    window.gastosNaia.editComunicado = function (id) {
+        const item = (window.gastosNaia.comunicadosItems || []).find(i => i.id === id);
+        if (!item) return;
+
+        // Limpiar y poblar formulario
+        formComunicado.reset();
+        document.getElementById('comunicado-id').value = item.id;
+        document.getElementById('comunicado-date').value = item.date;
+        document.getElementById('comunicado-title').value = item.title;
+        document.getElementById('comunicado-desc').value = item.description || '';
+
+        // El input de archivo no se puede poblar por seguridad, mostramos aviso si ya tiene uno
+        if (item.fileUrl) {
+            showToast('Nota: El archivo adjunto se mantendrá si no subes uno nuevo.', 'info');
+        }
+
+        document.getElementById('form-event').style.display = 'none';
+        document.getElementById('form-comunicado').style.display = 'block';
+        document.getElementById('modal-title').innerText = "✏️ Editar Nota";
+        document.getElementById('gcal-modal-overlay').style.display = 'flex';
+    };
+
+    window.gastosNaia.deleteComunicado = async function (id) {
+        if (!confirm('¿Seguro que quieres borrar esta nota? Si tiene una foto, también se borrará del servidor.')) return;
+
+        showLoading();
+        try {
+            await apiPost('deleteComunicado', { id: id });
+            showToast('Comunicado eliminado correctamente');
+            loadComunicados();
+        } catch (e) {
+            showError("No se pudo borrar: " + e.message);
+        } finally {
+            hideLoading();
+        }
+    };
+
+    if (btnNuevoComunicado) {
+        btnNuevoComunicado.onclick = () => {
+            formComunicado.reset();
+            document.getElementById('comunicado-id').value = '';
+            document.getElementById('comunicado-date').valueAsDate = new Date();
+            document.getElementById('form-event').style.display = 'none';
+            document.getElementById('form-comunicado').style.display = 'block';
+            document.getElementById('modal-title').innerText = "📝 Nueva Nota / Comunicado";
+            document.getElementById('gcal-modal-overlay').style.display = 'flex';
+        };
     }
 
     if (formComunicado) {
@@ -1984,20 +2062,27 @@
             e.preventDefault();
 
             const btnSave = document.getElementById('btn-save-comunicado');
+            const id = document.getElementById('comunicado-id').value;
             const date = document.getElementById('comunicado-date').value;
             const title = document.getElementById('comunicado-title').value;
             const desc = document.getElementById('comunicado-desc').value;
             const fileInput = document.getElementById('comunicado-file');
 
+            // Bugfix: Si estamos editando y no subimos archivo, queremos mantener el existente
+            let existingItem = null;
+            if (id) {
+                existingItem = (window.gastosNaia.comunicadosItems || []).find(i => i.id === id);
+            }
+
             btnSave.disabled = true;
             btnSave.style.opacity = '0.5';
 
-            let fileUrl = null;
-            let fileName = null;
-            let fileType = null;
+            let fileUrl = existingItem ? existingItem.fileUrl : null;
+            let fileName = existingItem ? existingItem.fileName : null;
+            let fileType = existingItem ? existingItem.fileType : null;
 
             try {
-                // 1. Si hay archivo, lo subimos primero a Drive
+                // 1. Si hay un archivo nuevo, lo subimos
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
                     fileName = file.name;
@@ -2008,7 +2093,6 @@
                     const formData = new FormData();
                     formData.append('file', file);
 
-                    // Fetch directo especial para subida de comunicado
                     const res = await fetch('?action=uploadComunicado', { method: 'POST', body: formData });
                     const json = await res.json();
 
@@ -2020,6 +2104,7 @@
                 uploadProgress.style.display = 'none';
 
                 await apiPost('saveComunicado', {
+                    id: id || null,
                     date: date,
                     title: title,
                     description: desc,
@@ -2028,10 +2113,8 @@
                     fileType: fileType
                 });
 
-                showToast('¡Comunicado guardado con éxito!');
+                showToast(id ? 'Resumen actualizado correctamente' : '¡Nota guardada con éxito!');
                 document.getElementById('gcal-modal-overlay').style.display = 'none';
-
-                // Recargar el timeline
                 loadComunicados();
 
             } catch (err) {

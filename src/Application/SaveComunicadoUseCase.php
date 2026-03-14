@@ -18,13 +18,17 @@ class SaveComunicadoUseCase
         $this->secret = is_string($sec) ? $sec : '';
     }
 
-    public function execute(string $date, string $title, string $description, ?string $fileUrl, ?string $fileType, ?string $fileName): string
+    public function execute(string $date, string $title, string $description, ?string $fileUrl, ?string $fileType, ?string $fileName, ?string $id = null): string
     {
         if (empty($this->databaseUrl) || empty($this->secret)) {
             throw new \Exception("Firebase credentials not configured.");
         }
 
-        $id = uniqid('com_');
+        $isNew = ($id === null);
+        if ($isNew) {
+            $id = uniqid('com_');
+        }
+
         $timestamp = date('c');
 
         $data = [
@@ -35,12 +39,18 @@ class SaveComunicadoUseCase
             'fileUrl' => $fileUrl,
             'fileType' => $fileType,
             'fileName' => $fileName,
-            'created_at' => $timestamp
+            'updated_at' => $timestamp
         ];
+
+        if ($isNew) {
+            $data['created_at'] = $timestamp;
+        }
 
         // Se guardará en /comunicados/{id}
         $url = sprintf('%s/comunicados/%s.json?auth=%s', $this->databaseUrl, $id, $this->secret);
 
+        // Usamos PATCH si es una edición para no borrar campos que no estemos mandando (aunque aquí mandamos todos)
+        // O PUT para sobrescribir completamente. Usaremos PUT para asegurar consistencia.
         $options = [
             'http' => [
                 'method' => 'PUT',

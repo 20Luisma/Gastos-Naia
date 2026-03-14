@@ -43,8 +43,14 @@ class GetComunicadosUseCase
             return [];
         }
 
-        // Convertir de objeto asociativo a array plano y ordenar por fecha descendente
-        $comunicados = array_values($data);
+        // Convertir de objeto asociativo a array plano inyectando el ID
+        $comunicados = [];
+        foreach ($data as $id => $item) {
+            $item['id'] = $id;
+            $comunicados[] = $item;
+        }
+
+        // Ordenar por fecha descendente
         usort($comunicados, function ($a, $b) {
             return strtotime($b['date']) - strtotime($a['date']);
         });
