@@ -130,13 +130,30 @@
 
     function switchView(name) {
         clearError();
+        // Ocultar todas las vistas estandar
         Object.entries(views).forEach(([key, el]) => {
             if (el) el.style.display = key === name ? 'block' : 'none';
         });
 
-        // Hide special Google Calendar view if not selected
+        // Hide special Google Calendar view
         const calView = document.getElementById('view-calendario');
-        if (calView) calView.style.display = (name === 'calendario') ? 'flex' : 'none';
+        if (calView) {
+            if (name === 'calendario') {
+                calView.style.display = 'flex';
+            } else {
+                calView.style.display = 'none';
+            }
+        }
+
+        // Hide special Comunicados view
+        const comView = document.getElementById('view-comunicados');
+        if (comView) {
+            if (name === 'comunicados') {
+                comView.style.display = 'block';
+            } else {
+                comView.style.display = 'none';
+            }
+        }
 
         document.querySelectorAll('.nav__btn, .nav-dropdown__item').forEach(btn => {
             btn.classList.toggle('nav__btn--active', btn.dataset.view === name);
@@ -1850,13 +1867,7 @@
 
     document.querySelectorAll('.nav__btn[data-view="calendario"]').forEach(btn => {
         btn.addEventListener('click', () => {
-            clearError();
-            Object.entries(views).forEach(([key, el]) => {
-                if (el) el.style.display = key === 'calendario' ? 'block' : 'none';
-            });
-            document.querySelectorAll('.nav__btn').forEach(b => {
-                b.classList.toggle('nav__btn--active', b.dataset.view === 'calendario');
-            });
+            switchView('calendario');
             updateMainHeader();
             loadCalendarEvents();
             renderMiniCal();
