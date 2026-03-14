@@ -8,14 +8,16 @@ class SaveComunicadoUseCase
 {
     private string $databaseUrl;
     private string $secret;
+    private ?\GastosNaia\Infrastructure\TelegramNotificationService $telegramService = null;
 
-    public function __construct()
+    public function __construct(?\GastosNaia\Infrastructure\TelegramNotificationService $telegramService = null)
     {
         $dbUrl = $_ENV['FIREBASE_DATABASE_URL'] ?? $_SERVER['FIREBASE_DATABASE_URL'] ?? getenv('FIREBASE_DATABASE_URL');
         $this->databaseUrl = rtrim(is_string($dbUrl) ? $dbUrl : '', '/');
 
         $sec = $_ENV['FIREBASE_SECRET'] ?? $_SERVER['FIREBASE_SECRET'] ?? getenv('FIREBASE_SECRET');
         $this->secret = is_string($sec) ? $sec : '';
+        $this->telegramService = $telegramService;
     }
 
     public function execute(string $date, string $title, string $description, ?string $fileUrl, ?string $fileType, ?string $fileName, ?string $id = null): string
@@ -64,6 +66,20 @@ class SaveComunicadoUseCase
 
         if ($result === false) {
             throw new \Exception("Error al guardar el comunicado en Firebase.");
+        }
+
+        // Enviar notificación por Telegram si es nuevo
+        if ($isNew && $this->telegramService) {
+            $msg = "<b>📝 Diario de Naia</b>\n\n";
+            $msg .= "<b>Fecha:</b> " . date('d/m/Y', strtotime($date)) . "\n";
+            $msg .= "<b>Título:</b> {$title}\n\n";
+            if (!empty($description)) {
+                $msg .= "<i>" . mb_substr($description, 0, 200) . (mb_strlen($description) > 200 ? '...' : '') . "</i>\n\n";
+            }
+            if ($fileUrl) {
+                $msg .= "🔗 <a href='https://contenido.creawebes.com/GastosNaia/{$fileUrl}'>Ver adjunto</a>";
+            }
+            $this->telegramService->sendMessage($msg);
         }
 
         return $id;

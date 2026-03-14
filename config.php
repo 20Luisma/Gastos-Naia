@@ -96,4 +96,7 @@ return [
         2025 => '1gmfqyoQr7Fx-J1Rz76Lo0NGq_qTHt9Uj',
         2026 => '1CNY-mYwrG1HCgwSQde_P8sOVt6nWum6e',
     ],
+    // ── Telegram Notifications ──
+    'telegram_token' => '8523595347:AAGc_KWuZjWO3ziJML-Jp9So5B5UMCqKr3U',
+    'telegram_chat_id' => '1871392012',
 ];

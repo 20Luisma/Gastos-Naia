@@ -42,6 +42,7 @@ class ApiController
     private ?CachedExpenseRepository $expenseRepository = null;
     private ?GoogleDriveReceiptRepository $receiptRepository = null;
     private ?GoogleCalendarRepository $calendarRepository = null;
+    private ?\GastosNaia\Infrastructure\TelegramNotificationService $telegramService = null;
 
     public function __construct(array $config)
     {
@@ -66,9 +67,15 @@ class ApiController
         $firebaseWriteRepo = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
         $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
 
+        // Telegram Service
+        $this->telegramService = new \GastosNaia\Infrastructure\TelegramNotificationService(
+            $config['telegram_token'] ?? '',
+            $config['telegram_chat_id'] ?? ''
+        );
+
         $this->getComunicadosUseCase = new \GastosNaia\Application\GetComunicadosUseCase();
         $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase(__DIR__ . '/../../');
-        $this->saveComunicadoUseCase = new \GastosNaia\Application\SaveComunicadoUseCase();
+        $this->saveComunicadoUseCase = new \GastosNaia\Application\SaveComunicadoUseCase($this->telegramService);
         $this->deleteComunicadoUseCase = new \GastosNaia\Application\DeleteComunicadoUseCase(__DIR__ . '/../../');
 
         $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
