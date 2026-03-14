@@ -1,0 +1,64 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install PHP & Composer dependencies
+        run: |
+          sudo apt-get install -y php php-cli unzip
+          curl -sS https://getcomposer.org/installer | php
+          php composer.phar install --optimize-autoloader
+
+      - name: Run PHPUnit
+        run: php composer.phar run test
+
+  deploy:
+    name: Deploy code to Hostinger
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Ensure storage directory exists
+        env:
+          SSHPASS: ${{ secrets.DEPLOY_SSH_PASS }}
+        run: |
+          sshpass -e ssh -p ${{ secrets.DEPLOY_SSH_PORT }} -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
+            "mkdir -p /home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia/storage && chmod 777 /home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia/storage"
+
+      - name: Deploy via rsync
+        env:
+          SSHPASS: ${{ secrets.DEPLOY_SSH_PASS }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT }} -H ${{ secrets.DEPLOY_SSH_HOST }} >> ~/.ssh/known_hosts
+          sshpass -e rsync -avz --delete -e "ssh -p ${{ secrets.DEPLOY_SSH_PORT }} -o StrictHostKeyChecking=no" \
+          --exclude '.git' \
+          --exclude '.github' \
+          --exclude '.env' \
+          --exclude 'backups' \
+          --exclude 'storage' \
+          ./ ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:/home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia/
+
+      - name: Install Composer dependencies on server
+        env:
+          SSHPASS: ${{ secrets.DEPLOY_SSH_PASS }}
+        run: |
+          sshpass -e ssh -p ${{ secrets.DEPLOY_SSH_PORT }} -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
+            "cd /home/${{ secrets.DEPLOY_SSH_USER }}/domains/contenido.creawebes.com/public_html/GastosNaia && composer install --no-dev --optimize-autoloader 2>&1"
