@@ -775,7 +775,7 @@
         </footer>
     </div>
 
-    <script src="assets/app.js?v=5.0"></script>
+    <script src="assets/app.js?v=5.1"></script>
 </body>
 
 </html>

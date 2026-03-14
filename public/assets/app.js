@@ -1889,28 +1889,6 @@
     const formComunicado = document.getElementById('form-comunicado');
     const uploadProgress = document.getElementById('comunicado-upload-progress');
 
-    if (btnAddComunicado) {
-        btnAddComunicado.addEventListener('click', () => {
-            // Reutilizamos el modal general
-            document.getElementById('gcal-modal-title').textContent = 'Nuevo Comunicado';
-            document.getElementById('gcal-modal-title-icon').textContent = '📝';
-
-            // Ocultar forms de calendario
-            document.getElementById('cal-event-form').style.display = 'none';
-            document.getElementById('modal-task-form').style.display = 'none';
-            document.getElementById('form-cita').style.display = 'none';
-
-            // Mostrar nuestro form y resetear
-            formComunicado.reset();
-            formComunicado.style.display = 'block';
-            uploadProgress.style.display = 'none';
-
-            // Fecha de hoy por defecto
-            document.getElementById('comunicado-date').value = new Date().toISOString().split('T')[0];
-
-            document.getElementById('gcal-modal-overlay').style.display = 'flex';
-        });
-    }
 
     async function loadComunicados() {
         showLoading();
@@ -2024,9 +2002,13 @@
             showToast('Nota: El archivo adjunto se mantendrá si no subes uno nuevo.', 'info');
         }
 
-        document.getElementById('form-event').style.display = 'none';
+        document.getElementById('cal-event-form').style.display = 'none';
+        document.getElementById('modal-task-form').style.display = 'none';
+        document.getElementById('form-cita').style.display = 'none';
         document.getElementById('form-comunicado').style.display = 'block';
-        document.getElementById('modal-title').innerText = "✏️ Editar Nota";
+
+        document.getElementById('gcal-modal-title').innerText = "Editar Nota";
+        document.getElementById('gcal-modal-title-icon').innerText = "✏️";
         document.getElementById('gcal-modal-overlay').style.display = 'flex';
     };
 
@@ -2045,14 +2027,19 @@
         }
     };
 
-    if (btnNuevoComunicado) {
-        btnNuevoComunicado.onclick = () => {
+    if (btnAddComunicado) {
+        btnAddComunicado.onclick = () => {
             formComunicado.reset();
             document.getElementById('comunicado-id').value = '';
             document.getElementById('comunicado-date').valueAsDate = new Date();
-            document.getElementById('form-event').style.display = 'none';
+
+            document.getElementById('cal-event-form').style.display = 'none';
+            document.getElementById('modal-task-form').style.display = 'none';
+            document.getElementById('form-cita').style.display = 'none';
             document.getElementById('form-comunicado').style.display = 'block';
-            document.getElementById('modal-title').innerText = "📝 Nueva Nota / Comunicado";
+
+            document.getElementById('gcal-modal-title').innerText = "Nueva Nota / Comunicado";
+            document.getElementById('gcal-modal-title-icon').innerText = "📝";
             document.getElementById('gcal-modal-overlay').style.display = 'flex';
         };
     }
