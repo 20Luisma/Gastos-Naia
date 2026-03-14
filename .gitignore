@@ -17,13 +17,6 @@ Thumbs.db
 vendor/
 
 # Archivos temporales de desarrollo
-debug.log
-server.log
-test_api.php
-test_sa.php
-debug_google.php
-test2.php
-public/test.php
 .env.bak
 
 # No subir los eventos locales al repo, solo se guardan en el servidor
@@ -31,4 +24,3 @@ storage/*
 !storage/.gitkeep
 
 docs/google-oauth.md
-upload_key.php
