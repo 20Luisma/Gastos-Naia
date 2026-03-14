@@ -11,13 +11,18 @@ class AddExpenseUseCase
     private \GastosNaia\Infrastructure\FirebaseBackupService $backupService;
     private \GastosNaia\Infrastructure\FirebaseWriteRepository $firebaseWrite;
     private \GastosNaia\Infrastructure\FcmNotificationService $fcm;
+    private ?\GastosNaia\Infrastructure\TelegramNotificationService $telegram = null;
 
-    public function __construct(ExpenseRepositoryInterface $expenseRepository, \GastosNaia\Infrastructure\FirebaseBackupService $backupService)
-    {
+    public function __construct(
+        ExpenseRepositoryInterface $expenseRepository,
+        \GastosNaia\Infrastructure\FirebaseBackupService $backupService,
+        ?\GastosNaia\Infrastructure\TelegramNotificationService $telegram = null
+    ) {
         $this->expenseRepository = $expenseRepository;
         $this->backupService = $backupService;
         $this->firebaseWrite = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
         $this->fcm = new \GastosNaia\Infrastructure\FcmNotificationService();
+        $this->telegram = $telegram;
     }
 
     public function execute(int $year, int $month, string $date, string $description, float $amount): bool
@@ -40,6 +45,15 @@ class AddExpenseUseCase
             // Enviar notificación push FCM al móvil
             $body = "{$expense->getDescription()} — " . number_format($expense->getAmount(), 2, ',', '.') . ' €';
             $this->fcm->notify('add', $body, $year, $month);
+
+            // Enviar a Telegram
+            if ($this->telegram) {
+                $msg = "<b>💰 Nuevo Gasto Naia</b>\n\n";
+                $msg .= "<b>Concepto:</b> {$description}\n";
+                $msg .= "<b>Importe:</b> " . number_format($amount, 2, ',', '.') . " €\n";
+                $msg .= "<b>Fecha:</b> " . date('d/m/Y', strtotime($date));
+                $this->telegram->sendMessage($msg);
+            }
         }
 
         return $success;

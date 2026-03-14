@@ -57,8 +57,14 @@ class ApiController
 
         $firebaseService = new \GastosNaia\Infrastructure\FirebaseBackupService();
 
+        // Telegram Service
+        $this->telegramService = new \GastosNaia\Infrastructure\TelegramNotificationService(
+            $config['telegram_token'] ?? '',
+            $config['telegram_chat_id'] ?? ''
+        );
+
         $this->getExpensesUseCase = new GetExpensesUseCase($this->expenseRepository, $this->receiptRepository);
-        $this->addExpenseUseCase = new AddExpenseUseCase($this->expenseRepository, $firebaseService);
+        $this->addExpenseUseCase = new AddExpenseUseCase($this->expenseRepository, $firebaseService, $this->telegramService);
         $this->editExpenseUseCase = new EditExpenseUseCase($this->expenseRepository, $firebaseService);
         $this->deleteExpenseUseCase = new DeleteExpenseUseCase($this->expenseRepository, $firebaseService);
         $this->uploadReceiptUseCase = new UploadReceiptUseCase($this->receiptRepository);
@@ -66,12 +72,6 @@ class ApiController
 
         $firebaseWriteRepo = new \GastosNaia\Infrastructure\FirebaseWriteRepository();
         $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
-
-        // Telegram Service
-        $this->telegramService = new \GastosNaia\Infrastructure\TelegramNotificationService(
-            $config['telegram_token'] ?? '',
-            $config['telegram_chat_id'] ?? ''
-        );
 
         $this->getComunicadosUseCase = new \GastosNaia\Application\GetComunicadosUseCase();
         $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase(__DIR__ . '/../../');
@@ -523,6 +523,32 @@ class ApiController
                         throw new \Exception('calendar_id no configurado en config.php');
                     }
                     $event = $this->getCalendarRepository()->createEvent($calId, $input);
+
+                    // Notificar a Telegram
+                    if ($this->telegramService) {
+                        $summary = $input['summary'] ?? 'Sin título';
+                        $date = $input['start']['date'] ?? ($input['start']['dateTime'] ?? '');
+                        if ($date) {
+                            $date = date('d/m/Y', strtotime($date));
+                        }
+
+                        $type = $input['colorId'] ?? '1'; // Default color mapping or type
+                        $typeName = match ($type) {
+                            '10' => '🟢 Extraescolar',
+                            '3' => '🟣 Cita / Agenda',
+                            '11' => '🔴 NOTA IMPORTANTE',
+                            default => '📅 Evento'
+                        };
+
+                        $msg = "<b>{$typeName}</b>\n\n";
+                        $msg .= "<b>Evento:</b> {$summary}\n";
+                        $msg .= "<b>Fecha:</b> {$date}\n";
+                        if (!empty($input['description'])) {
+                            $msg .= "\n<i>{$input['description']}</i>";
+                        }
+                        $this->telegramService->sendMessage($msg);
+                    }
+
                     $this->jsonResponse(['success' => true, 'event' => $event]);
                     break;
 
