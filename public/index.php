@@ -74,6 +74,14 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ── Acción: logout ────────────────────────────────────────────────────────────
 if ($action === 'logout') {
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
     session_destroy();
     header('Location: ./');
     exit;
@@ -81,15 +89,17 @@ if ($action === 'logout') {
 
 // ── Guard: si no está autenticado, mostrar login ──────────────────────────────
 if (empty($_SESSION['authenticated'])) {
-    // Las peticiones AJAX/API devuelven 401 JSON
-    if ($action && $action !== 'login') {
+    // Las peticiones AJAX/API devuelven 401 JSON (excepto telegram_webhook que no tiene auth en sesión)
+    if ($action && $action !== 'login' && $action !== 'telegram_webhook') {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(401);
         echo json_encode(['error' => 'No autorizado. Por favor inicia sesión.']);
         exit;
     }
-    require __DIR__ . '/../templates/login.php';
-    exit;
+    if ($action !== 'telegram_webhook') {
+        require __DIR__ . '/../templates/login.php';
+        exit;
+    }
 }
 
 // ─── Usuario autenticado ──────────────────────────────────────────────────────
