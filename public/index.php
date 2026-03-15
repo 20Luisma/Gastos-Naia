@@ -89,7 +89,18 @@ if ($action === 'logout') {
 
 // ── Guard: si no está autenticado, mostrar login ──────────────────────────────
 $isApiKeyValid = false;
-if (isset($_SERVER['HTTP_X_API_KEY']) && $_SERVER['HTTP_X_API_KEY'] === ($config['webhook_secret'] ?? '')) {
+$providedKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['secret'] ?? '';
+
+// Si viene por JSON raw body en peticiones POST
+if (empty($providedKey) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $raw = file_get_contents('php://input');
+    $data = json_decode($raw, true);
+    if (is_array($data) && !empty($data['secret'])) {
+        $providedKey = $data['secret'];
+    }
+}
+
+if (!empty($providedKey) && $providedKey === ($config['webhook_secret'] ?? '')) {
     $isApiKeyValid = true;
 }
 
