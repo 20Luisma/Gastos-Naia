@@ -88,12 +88,17 @@ if ($action === 'logout') {
 }
 
 // ── Guard: si no está autenticado, mostrar login ──────────────────────────────
-if (empty($_SESSION['authenticated'])) {
+$isApiKeyValid = false;
+if (isset($_SERVER['HTTP_X_API_KEY']) && $_SERVER['HTTP_X_API_KEY'] === ($config['webhook_secret'] ?? '')) {
+    $isApiKeyValid = true;
+}
+
+if (empty($_SESSION['authenticated']) && !$isApiKeyValid) {
     // Las peticiones AJAX/API devuelven 401 JSON (excepto telegram_webhook que no tiene auth en sesión)
     if ($action && $action !== 'login' && $action !== 'telegram_webhook') {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(401);
-        echo json_encode(['error' => 'No autorizado. Por favor inicia sesión.']);
+        echo json_encode(['error' => 'No autorizado. Por favor inicia sesión o provee X-API-Key.']);
         exit;
     }
     if ($action !== 'telegram_webhook') {
