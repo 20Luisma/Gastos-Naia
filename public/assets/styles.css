@@ -975,15 +975,15 @@ body::before {
 }
 
 .toast--success {
-    background: rgba(52, 211, 153, 0.15);
-    border: 1px solid rgba(52, 211, 153, 0.3);
-    color: var(--success);
+    background: rgba(16, 185, 129, 0.95);
+    border: 1px solid rgba(52, 211, 153, 0.8);
+    color: #ffffff;
 }
 
 .toast--error {
-    background: rgba(248, 113, 113, 0.15);
-    border: 1px solid rgba(248, 113, 113, 0.3);
-    color: var(--danger);
+    background: rgba(239, 68, 68, 0.95);
+    border: 1px solid rgba(248, 113, 113, 0.8);
+    color: #ffffff;
 }
 
 @keyframes slideUp {
