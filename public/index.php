@@ -126,7 +126,11 @@ if ($action) {
     } catch (\Throwable $e) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(500);
-        echo json_encode(['error' => 'Server Configuration Error: ' . $e->getMessage()]);
+        echo json_encode([
+            'error' => 'Server Configuration Error: ' . $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
         exit;
     }
 } else {
