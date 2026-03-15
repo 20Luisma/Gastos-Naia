@@ -26,7 +26,7 @@ class SaveComunicadoUseCase
             throw new \Exception("Firebase credentials not configured.");
         }
 
-        $isNew = ($id === null);
+        $isNew = (empty($id));
         if ($isNew) {
             $id = uniqid('com_');
         }
