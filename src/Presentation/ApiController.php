@@ -260,6 +260,61 @@ class ApiController
                     $this->jsonResponse(['success' => $success]);
                     break;
 
+                case 'send_balance_telegram':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    if (!isset($input['year']) || !isset($input['month'])) {
+                        throw new \Exception('Año y mes son obligatorios.');
+                    }
+                    
+                    $year = (int) $input['year'];
+                    $month = (int) $input['month'];
+                    
+                    // Fetch expenses for the given month
+                    $result = $this->getExpensesUseCase->execute($year, $month);
+                    
+                    $total = 0;
+                    foreach ($result['expenses'] as $exp) {
+                        $amt = 0;
+                        $amountValue = is_array($exp) ? $exp['amount'] : $exp->getAmount();
+                        
+                        if (is_numeric($amountValue)) {
+                            $amt = (float) $amountValue;
+                        } else if (is_string($amountValue)) {
+                            $cleaned = str_replace(['€', ' '], '', trim($amountValue));
+                            if (strpos($cleaned, ',') !== false && strpos($cleaned, '.') === false) {
+                                $cleaned = str_replace(',', '.', $cleaned);
+                            } else if (strpos($cleaned, '.') !== false && strpos($cleaned, ',') !== false) {
+                                $cleaned = str_replace('.', '', $cleaned);
+                                $cleaned = str_replace(',', '.', $cleaned);
+                            }
+                            $amt = (float) $cleaned;
+                        }
+                        $total += $amt;
+                    }
+                    
+                    $half = $total / 2;
+                    $monthLabels = $this->config['month_labels'] ?? [];
+                    $monthName = $monthLabels[$month] ?? "Mes $month";
+                    
+                    // Build the message
+                    $msg = "🧾 <b>Resumen Gastos Naia - {$monthName} {$year}</b>\n\n";
+                    $msg .= "<b>Gasto Total:</b> " . number_format($total, 2, ',', '.') . "€\n";
+                    $msg .= "<b>Mitad a transferir:</b> " . number_format($half, 2, ',', '.') . "€\n\n";
+                    $msg .= "<i>Notificación enviada desde la App</i>";
+                    
+                    if ($this->telegramService) {
+                        $success = $this->telegramService->sendMessage($msg);
+                        if ($success) {
+                            $this->jsonResponse(['success' => true]);
+                        } else {
+                            throw new \Exception('El servicio de Telegram no pudo enviar el mensaje. Revisa el token y chat ID.');
+                        }
+                    } else {
+                        throw new \Exception('El servicio de Telegram no está configurado.');
+                    }
+                    break;
+
                 // ── COMUNICADOS ──
                 case 'getComunicados':
                     $comunicados = $this->getComunicadosUseCase->execute();

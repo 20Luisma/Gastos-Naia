@@ -48,6 +48,48 @@
         setTimeout(() => toast.remove(), 2900);
     }
 
+    /**
+     * Standard horizontal, delicate confirm dialog via SweetAlert2
+     */
+    function standardConfirm(message) {
+        if (typeof Swal === 'undefined') {
+            return confirm(message);
+        }
+
+        return new Promise((resolve) => {
+            Swal.fire({
+                html: `<div style="display:flex; align-items:center; gap:20px; text-align:left;">` +
+                    `<span style="font-size:0.95rem; font-weight:500; white-space:nowrap;">${message}</span>` +
+                    `<div style="display:flex; gap:10px;">` +
+                    `<button id="swal-btn-yes" class="btn-swal-mini btn-swal-primary">Aceptar</button>` +
+                    `<button id="swal-btn-no" class="btn-swal-mini btn-swal-ghost">Cancelar</button>` +
+                    `</div></div>`,
+                showConfirmButton: false,
+                showCancelButton: false,
+                background: '#1a1a2e',
+                color: '#fff',
+                width: 'auto',
+                padding: '12px 20px',
+                position: 'center',
+                grow: false,
+                didOpen: () => {
+                    const popup = Swal.getPopup();
+                    popup.style.borderRadius = '12px';
+                    popup.style.border = '1px solid rgba(255,255,255,0.1)';
+
+                    document.getElementById('swal-btn-yes').onclick = () => {
+                        resolve(true);
+                        Swal.close();
+                    };
+                    document.getElementById('swal-btn-no').onclick = () => {
+                        resolve(false);
+                        Swal.close();
+                    };
+                }
+            });
+        });
+    }
+
     function generateColors(count) {
         const colors = [], bgColors = [];
         for (let i = 0; i < count; i++) {
@@ -167,8 +209,20 @@
 
 
     document.querySelectorAll('.nav__btn, .nav-dropdown__item').forEach(btn => {
-        btn.addEventListener('click', () => switchView(btn.dataset.view));
+        btn.addEventListener('click', (e) => {
+            if (btn.classList.contains('nav__btn--logout')) return;
+            const view = btn.dataset.view;
+            if (view) switchView(view);
+        });
     });
+
+    window.handleLogout = function (e) {
+        if (e && e.preventDefault) e.preventDefault();
+
+        standardConfirm('¿Cerrar sesión?').then(confirmed => {
+            if (confirmed) window.location.href = '?action=logout';
+        });
+    };
 
     // ──────────────────────────────────────────────
     //  Vista: Resumen Anual
@@ -431,59 +485,37 @@
         });
     }
 
-    // Bizum Payment Button
-    const $btnPayBizum = document.getElementById('btn-pay-bizum');
-    if ($btnPayBizum) {
-        $btnPayBizum.addEventListener('click', () => {
-            if (!currentExpensesData || !currentExpensesData.expenses || currentExpensesData.expenses.length === 0) {
-                showToast('No hay gastos en este mes para pagar.', 'error');
-                return;
-            }
+    // Telegram Notification Button
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('#btn-notify-telegram');
+        if (!btn) return;
+        
+        if (!currentExpensesData || !currentExpensesData.expenses || currentExpensesData.expenses.length === 0) {
+            showToast('No hay gastos en este mes para notificar.', 'error');
+            return;
+        }
 
-            let total = 0;
-            currentExpensesData.expenses.forEach(e => {
-                let amt = 0;
-                if (typeof e.amount === 'number') amt = e.amount;
-                else {
-                    let cleaned = e.amount.replace(/[€\s]/g, '').trim();
-                    if (cleaned.includes(',') && !cleaned.includes('.')) cleaned = cleaned.replace(',', '.');
-                    else if (cleaned.includes('.') && cleaned.includes(',')) cleaned = cleaned.replace(/\./g, '').replace(',', '.');
-                    amt = parseFloat(cleaned) || 0;
-                }
-                total += amt;
-            });
+        const year = parseInt($selectYearExpense.value, 10);
+        const month = parseInt($selectMonthExpense.value, 10);
+        
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Enviando...';
 
-            const half = (total / 2).toFixed(2);
-
-            // Fallback para HTTP donde navigator.clipboard a menudo falla en móvil
-            const fallbackCopy = (text) => {
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                ta.style.position = 'fixed'; // Evitar scroll
-                ta.style.left = '-9999px';
-                document.body.appendChild(ta);
-                ta.select();
-                try {
-                    document.execCommand('copy');
-                    showToast(`Cantidad copiada: ${text}€`, 'success');
-                } catch (err) {
-                    showToast(`Cantidad a pagar: ${text}€`, 'success');
-                }
-                document.body.removeChild(ta);
-            };
-
-            // Copy to clipboard
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(half).then(() => {
-                    showToast(`Cantidad copiada: ${half}€`, 'success');
-                }).catch(() => {
-                    fallbackCopy(half);
-                });
+        try {
+            const res = await apiPost('send_balance_telegram', { year, month });
+            if (res.success) {
+                showToast('Notificación enviada por Telegram exitosamente.', 'success');
             } else {
-                fallbackCopy(half);
+                showToast('Ocurrió un error al enviar la notificación.', 'error');
             }
-        });
-    }
+        } catch (err) {
+            showToast(`Error: ${err.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
 
     // ──────────────────────────────────────────────
     // ──────────────────────────────────────────────
@@ -639,7 +671,7 @@
     }
 
     window.deleteRow = async function (row) {
-        if (!confirm('¿Estás seguro de que quieres eliminar este gasto permanentemente de Google Sheets?')) return;
+        if (!await standardConfirm('¿Eliminar este gasto?')) return;
 
         try {
             const year = $selectYearExpense.value;
@@ -2015,7 +2047,7 @@
     };
 
     window.gastosNaia.deleteComunicado = async function (id) {
-        if (!confirm('¿Seguro que quieres borrar esta nota? Si tiene una foto, también se borrará del servidor.')) return;
+        if (!await standardConfirm('¿Borrar esta nota?')) return;
 
         showLoading();
         try {

@@ -5,6 +5,33 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+/* Mini buttons for swal logout horizontal */
+.btn-swal-mini {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+.btn-swal-primary {
+    background: #6366f1;
+    color: white;
+}
+.btn-swal-primary:hover {
+    background: #4f46e5;
+}
+.btn-swal-ghost {
+    background: rgba(255,255,255,0.05);
+    color: #94a3b8;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.btn-swal-ghost:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
 /* ── Variables ── */
 :root {
     --bg-primary: #0c0c18;
@@ -948,15 +975,15 @@ body::before {
 }
 
 .toast--success {
-    background: rgba(52, 211, 153, 0.15);
-    border: 1px solid rgba(52, 211, 153, 0.3);
-    color: var(--success);
+    background: rgba(16, 185, 129, 0.95);
+    border: 1px solid rgba(52, 211, 153, 0.8);
+    color: #ffffff;
 }
 
 .toast--error {
-    background: rgba(248, 113, 113, 0.15);
-    border: 1px solid rgba(248, 113, 113, 0.3);
-    color: var(--danger);
+    background: rgba(239, 68, 68, 0.95);
+    border: 1px solid rgba(248, 113, 113, 0.8);
+    color: #ffffff;
 }
 
 @keyframes slideUp {

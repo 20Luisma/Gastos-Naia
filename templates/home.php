@@ -7,7 +7,9 @@
     <meta name="description" content="Gastos Naia — Gestión y visualización de gastos">
     <title>Gastos Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=1.5">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="assets/styles.css?v=2.4">
+    <script src="assets/app.js?v=2.3" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
@@ -82,8 +84,7 @@
                 </button>
 
                 <!-- Salir -->
-                <a href="?action=logout" class="nav__btn nav__btn--logout" title="Cerrar sesión"
-                    onclick="return confirm('¿Cerrar sesión?')">
+                <a href="?action=logout" class="nav__btn nav__btn--logout" title="Cerrar sesión" onclick="handleLogout(event); return false;">
                     <span class="nav__btn-icon">🔒</span>
                     <span>Salir</span>
                 </a>
@@ -308,12 +309,9 @@
                         <div style="display: flex; align-items: center; gap: 1rem;">
                             <span class="summary-row__value" id="expense-month-half-total"
                                 style="background: none; -webkit-text-fill-color: var(--accent2); color: var(--accent2); font-size: 1.4rem;">—</span>
-                            <button type="button" class="btn" id="btn-pay-bizum" title="Pagar con Bizum"
-                                style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background-color: #00c4b3; color: #fff; border: none; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
-                                <svg style="width: 16px; height: 16px; fill: currentColor;" viewBox="0 0 24 24">
-                                    <path
-                                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h2.73c.12.98.96 1.46 2.05 1.46 1.24 0 1.95-.61 1.95-1.49 0-.85-.49-1.39-2.32-1.85-2.22-.56-3.51-1.44-3.51-3.27 0-1.63 1.29-2.73 2.92-3.11V4.5h2.67v1.95c1.46.32 2.7 1.29 2.85 2.95h-2.65c-.15-.81-.88-1.27-1.86-1.27-1.07 0-1.83.56-1.83 1.41 0 .88.58 1.34 2.41 1.83 2.15.54 3.42 1.49 3.42 3.29 0 1.76-1.34 2.9-3.09 3.43z" />
-                                </svg> Bizum
+                            <button type="button" class="btn" id="btn-notify-telegram" title="Avisar por Telegram"
+                                style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background-color: #3b82f6; color: #fff; border: none; border-radius: var(--radius-sm); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                                <span>📱</span> Avisar Telegram
                             </button>
                         </div>
                     </div>
@@ -775,7 +773,6 @@
         </footer>
     </div>
 
-    <script src="assets/app.js?v=5.2"></script>
 </body>
 
 </html>
