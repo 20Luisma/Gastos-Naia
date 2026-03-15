@@ -12,18 +12,20 @@ class HandleTelegramWebhookUseCase
     private ProcessDiarioNoteUseCase $processNoteUseCase;
     private TelegramNotificationService $telegramService;
     private string $botToken;
+    private string $configuredChatId;
 
     public function __construct(
         TranscribeAudioUseCase $transcribeUseCase,
         ProcessDiarioNoteUseCase $processNoteUseCase,
-        TelegramNotificationService $telegramService
+        TelegramNotificationService $telegramService,
+        string $botToken,
+        string $configuredChatId
     ) {
         $this->transcribeUseCase = $transcribeUseCase;
         $this->processNoteUseCase = $processNoteUseCase;
         $this->telegramService = $telegramService;
-
-        $token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? $_SERVER['TELEGRAM_BOT_TOKEN'] ?? getenv('TELEGRAM_BOT_TOKEN');
-        $this->botToken = is_string($token) ? $token : '';
+        $this->botToken = $botToken;
+        $this->configuredChatId = $configuredChatId;
     }
 
     public function execute(array $payload): bool
@@ -41,10 +43,9 @@ class HandleTelegramWebhookUseCase
         $message = $payload['message'];
         $chatId = $message['chat']['id'] ?? '';
         
-        // TODO: En producción, idealmente validaríamos que el $chatId coincida con el $_ENV['TELEGRAM_CHAT_ID'] para que nadie más pueda meter gastos.
-        $configuredChatId = $_ENV['TELEGRAM_CHAT_ID'] ?? $_SERVER['TELEGRAM_CHAT_ID'] ?? getenv('TELEGRAM_CHAT_ID');
-        if ((string)$chatId !== (string)$configuredChatId) {
-            error_log("TELEGRAM WEBHOOK: Intento de uso desde un chat no autorizado ({$chatId})");
+        // Validar que el $chatId coincida con el configurado para que nadie más pueda meter gastos.
+        if ((string)$chatId !== (string)$this->configuredChatId) {
+            error_log("TELEGRAM WEBHOOK: Intento de uso desde un chat no autorizado ({$chatId} vs {$this->configuredChatId})");
             return true; // Ignorar silenciosamente
         }
 

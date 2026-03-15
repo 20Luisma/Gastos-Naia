@@ -158,7 +158,9 @@ class ApiController
                 $webhookUseCase = new \GastosNaia\Application\HandleTelegramWebhookUseCase(
                     $transcribeUseCase,
                     $processNoteUseCase,
-                    $this->telegramService
+                    $this->telegramService,
+                    $this->config['telegram_token'] ?? '',
+                    $this->config['telegram_chat_id'] ?? ''
                 );
                 
                 $success = $webhookUseCase->execute($input);
