@@ -71,7 +71,7 @@ class HandleTelegramWebhookUseCase
                 $title = $this->processNoteUseCase->execute($transcribedText);
 
                 // Paso 5: Responder al usuario
-                $this->telegramService->sendMessage("✅ <b>Guardado en el Diario</b>\n\n<b>Tíulo:</b> {$title}\n<b>Texto:</b> <i>\"{$transcribedText}\"</i>");
+                $this->telegramService->sendMessage("✅ <b>Guardado en el Diario</b>\n\n<b>Título:</b> {$title}\n<b>Texto:</b> <i>\"{$transcribedText}\"</i>");
                 
                 @unlink($localAudioPath); // Limpieza
 
@@ -100,7 +100,7 @@ class HandleTelegramWebhookUseCase
             try {
                 // Guardar directamente (se salta la transcripción whisper)
                 $title = $this->processNoteUseCase->execute($text);
-                $this->telegramService->sendMessage("✅ <b>Guardado en el Diario por texto</b>\n\n<b>Tíulo:</b> {$title}");
+                $this->telegramService->sendMessage("✅ <b>Guardado en el Diario por texto</b>\n\n<b>Título:</b> {$title}");
             } catch (\Exception $e) {
                 error_log("TELEGRAM WEBHOOK ERROR (Text): " . $e->getMessage());
                 $this->telegramService->sendMessage("❌ Error al guardar la nota: " . $e->getMessage());
