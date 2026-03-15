@@ -148,6 +148,24 @@ class ApiController
         header('Cache-Control: no-cache, no-store, must-revalidate');
 
         try {
+            // Webhook handler (does not use standard auth/session)
+            if ($action === 'telegram_webhook') {
+                $input = $this->getJsonInput();
+                
+                // Initialize the webhook use case here
+                $transcribeUseCase = new \GastosNaia\Application\TranscribeAudioUseCase();
+                $processNoteUseCase = new \GastosNaia\Application\ProcessDiarioNoteUseCase($this->saveComunicadoUseCase);
+                $webhookUseCase = new \GastosNaia\Application\HandleTelegramWebhookUseCase(
+                    $transcribeUseCase,
+                    $processNoteUseCase,
+                    $this->telegramService
+                );
+                
+                $success = $webhookUseCase->execute($input);
+                $this->jsonResponse(['ok' => $success]);
+                return;
+            }
+
             switch ($action) {
                 case 'years':
                     $rows = $this->expenseRepository->getAnnualTotals();
