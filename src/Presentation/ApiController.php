@@ -732,6 +732,7 @@ class ApiController
                     $file = __DIR__ . '/../../storage/extraescolares.json';
                     $items = file_exists($file) ? json_decode(file_get_contents($file), true) ?? [] : [];
                     $id = $input['id'] ?? null;
+                    $isNew = false;
                     if ($id) {
                         // Actualizar existente
                         foreach ($items as &$item) {
@@ -744,8 +745,27 @@ class ApiController
                         // Crear nuevo
                         $input['id'] = 'local-' . time() . '-' . substr(md5(rand()), 0, 6);
                         $items[] = $input;
+                        $isNew = true;
                     }
                     file_put_contents($file, json_encode(array_values($items), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                    
+                    // Notificar a Telegram si es nuevo
+                    if ($isNew && $this->telegramService) {
+                        $summary = $input['summary'] ?? ($input['title'] ?? 'Sin título');
+                        $dateRaw = $input['start'];
+                        if (is_array($dateRaw)) {
+                            $dateRaw = $dateRaw['date'] ?? ($dateRaw['dateTime'] ?? '');
+                        }
+                        $date = $dateRaw ? date('d/m/Y', strtotime($dateRaw)) : '';
+                        $msg = "<b>🟢 Extraescolar</b>\n\n";
+                        $msg .= "<b>Evento:</b> {$summary}\n";
+                        $msg .= "<b>Fecha:</b> {$date}\n";
+                        if (!empty($input['description'])) {
+                            $msg .= "\n<i>{$input['description']}</i>";
+                        }
+                        $this->telegramService->sendMessage($msg);
+                    }
+
                     $this->jsonResponse(['success' => true, 'id' => $input['id']]);
                     break;
 
@@ -763,6 +783,38 @@ class ApiController
                         $items[] = $ni;
                     }
                     file_put_contents($file, json_encode(array_values($items), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                    
+                    // Notificar a Telegram
+                    if ($this->telegramService && count($newItems) > 0) {
+                        $first = $newItems[0];
+                        $summary = $first['summary'] ?? ($first['title'] ?? 'Sin título');
+                        $msg = "<b>🟢 Extraescolar (Repetido)</b>\n\n";
+                        $msg .= "<b>Evento:</b> {$summary}\n";
+                        $msg .= "<b>Repeticiones creadas:</b> " . count($newItems) . "\n";
+                        $datesStr = [];
+                        foreach ($newItems as $it) {
+                            $dateRaw = $it['start'];
+                            if (is_array($dateRaw)) {
+                                $dateRaw = $dateRaw['date'] ?? ($dateRaw['dateTime'] ?? '');
+                            }
+                            if ($dateRaw) {
+                                $datesStr[] = date('d/m/Y', strtotime($dateRaw));
+                            }
+                        }
+                        if (count($datesStr) > 0) {
+                            $display = array_slice($datesStr, 0, 5);
+                            $msg .= "<b>Fechas:</b> " . implode(', ', $display);
+                            if (count($datesStr) > 5) {
+                                $msg .= " ...y " . (count($datesStr) - 5) . " más";
+                            }
+                            $msg .= "\n";
+                        }
+                        if (!empty($first['description'])) {
+                            $msg .= "\n<i>{$first['description']}</i>";
+                        }
+                        $this->telegramService->sendMessage($msg);
+                    }
+
                     $this->jsonResponse(['success' => true, 'count' => count($newItems)]);
                     break;
 
