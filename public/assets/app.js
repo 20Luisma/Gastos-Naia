@@ -1164,6 +1164,11 @@
         openModal('evento');
     });
 
+    document.getElementById('drop-visita')?.addEventListener('click', () => {
+        $createWrapper.classList.remove('open');
+        openModal('visita');
+    });
+
     document.getElementById('drop-tarea')?.addEventListener('click', () => {
         $createWrapper.classList.remove('open');
         openModal('tarea');
@@ -1196,9 +1201,13 @@
         editingEventId = editEv ? editEv.id : null;
         editingEventSource = editEv ? (editEv.isLocal ? 'local' : 'gcal') : null;
 
-        if (type === 'evento') {
-            $modalTitle.textContent = 'Extraescolares';
-            $modalIcon.textContent = '📅';
+        if (type === 'evento' || type === 'visita') {
+            const isVisita = type === 'visita';
+            // Guardamos el tipo actual en el form para usarlo en el submit
+            $formEvento.dataset.currentType = type;
+
+            $modalTitle.textContent = isVisita ? 'Citas / Visitas de Naia' : 'Extraescolares';
+            $modalIcon.textContent = isVisita ? '🟠' : '📅';
             $formEvento.style.display = 'block';
             if (day) {
                 const y = calYear;
@@ -1219,7 +1228,7 @@
                 document.getElementById('cal-event-time-start').value = start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
                 document.getElementById('cal-event-time-end').value = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
                 if ($timeRow) $timeRow.style.display = editEv.allDay ? 'none' : 'grid';
-                $modalTitle.textContent = 'Editar Extraescolar';
+                $modalTitle.textContent = isVisita ? 'Editar Visita' : 'Editar Extraescolar';
             }
         } else if (type === 'tarea') {
             $modalTitle.textContent = 'Notas importantes';
@@ -1422,6 +1431,9 @@
         const untilDate = $repeatUntil?.value;
         const location = document.getElementById('cal-event-location').value.trim();
 
+        const currentType = $formEvento.dataset.currentType || 'evento';
+        const isVisita = currentType === 'visita';
+
         if (isRepeat && weekdays.length > 0 && untilDate) {
             const dates = getRecurringDates(startDate, untilDate, weekdays);
             if (dates.length === 0) {
@@ -1433,7 +1445,15 @@
 
             const newEvents = [];
             for (let d of dates) {
-                newEvents.push({
+                newEvents.push(isVisita ? {
+                    title: title,
+                    description: desc,
+                    location: location,
+                    allDay: allDay,
+                    start: allDay ? d : `${d}T${tStart}:00`,
+                    end: allDay ? d : `${d}T${tEnd}:00`,
+                    colorId: "6" // Amarillo Google Calendar
+                } : {
                     title: title,
                     description: desc,
                     location: location,
@@ -1445,36 +1465,52 @@
                     type: 'extraescolar'
                 });
             }
-            await saveExtraEventBatch(newEvents);
+
+            if (isVisita) {
+                await apiPost('calendar_create_batch', newEvents);
+            } else {
+                await saveExtraEventBatch(newEvents);
+            }
 
             $formEvento.reset();
             if ($repeatOptions) $repeatOptions.style.display = 'none';
             closeModal();
-            showToast(`✓ ${dates.length} eventos locales creados`);
+            showToast(`✓ ${dates.length} ${isVisita ? 'visitas creadas' : 'eventos creados'}`);
             await loadCalendarEvents();
             return;
         }
 
-        if (editingEventId && editingEventSource === 'local') {
-            const updatedItem = {
-                id: editingEventId,
-                title, description: desc, location, allDay,
-                start: allDay ? startDate : startVal,
-                end: allDay ? (endDate || startDate) : endVal,
-                color: "10", isLocal: true, type: 'extraescolar'
-            };
-            await saveExtraEvent(updatedItem);
-            showToast('Extraescolar actualizado ✓');
+        const payload = isVisita ? {
+            title, description: desc, location, allDay,
+            start: allDay ? startDate : startVal,
+            end: allDay ? (endDate || startDate) : endVal,
+            colorId: "6"
+        } : {
+            title, description: desc, location, allDay,
+            start: allDay ? startDate : startVal,
+            end: allDay ? (endDate || startDate) : endVal,
+            color: "10", isLocal: true, type: 'extraescolar'
+        };
+
+        if (editingEventId) {
+            if (isVisita && editingEventSource === 'gcal') {
+                payload.eventId = editingEventId;
+                await apiPost('calendar_update', payload);
+                showToast('Visita actualizada ✓');
+            } else if (!isVisita && editingEventSource === 'local') {
+                payload.id = editingEventId;
+                await saveExtraEvent(payload);
+                showToast('Extraescolar actualizado ✓');
+            }
         } else {
             // Crear nuevo
-            const item = {
-                title, description: desc, location, allDay,
-                start: allDay ? startDate : startVal,
-                end: allDay ? (endDate || startDate) : endVal,
-                color: "10", isLocal: true, type: 'extraescolar'
-            };
-            await saveExtraEvent(item);
-            showToast('Extraescolar guardado ✓');
+            if (isVisita) {
+                await apiPost('calendar_create', payload);
+                showToast('Visita guardada ✓');
+            } else {
+                await saveExtraEvent(payload);
+                showToast('Extraescolar guardado ✓');
+            }
         }
 
         $formEvento.reset();
@@ -1860,11 +1896,11 @@
 
         const dayEvents = calEvents.filter(ev => {
             const d = new Date(ev.start);
-            // Comprobamos que sea el día seleccionado Y que el colorId sea "11" (Rojo)
+            // Comprobamos que sea el día seleccionado Y que el colorId sea "11" (Rojo) o "6" (Amarillo)
             return d.getFullYear() === calYear &&
                 d.getMonth() + 1 === calMonth &&
                 d.getDate() === day &&
-                ev.color === "11";
+                (ev.color === "11" || ev.color === "6");
         });
 
         if (dayEvents.length === 0) {
@@ -1875,7 +1911,7 @@
 
         if (empty) empty.style.display = 'none';
         list.innerHTML = dayEvents.map(ev => `
-            <div class="gcal-day-event-item gcal-event--color-11" style="margin-bottom:8px; padding:10px; display:block;">
+            <div class="gcal-day-event-item gcal-event--color-${ev.color}" style="margin-bottom:8px; padding:10px; display:block;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <strong style="font-size:0.85rem; color:#fff;">${escapeHtml(ev.title)}</strong>
                     <div style="display:flex; gap:8px;">

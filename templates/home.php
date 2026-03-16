@@ -442,6 +442,9 @@
                                 <button class="gcal-dropdown-item" id="drop-evento" type="button">
                                     <span>📅</span> Extraescolares
                                 </button>
+                                <button class="gcal-dropdown-item" id="drop-visita" type="button">
+                                    <span>🟠</span> Citas / Visitas de Naia
+                                </button>
                                 <button class="gcal-dropdown-item" id="drop-cita" type="button">
                                     <span>🕒</span> Agenda de citas
                                 </button>
@@ -470,6 +473,10 @@
                             <label class="gcal-cal-item">
                                 <span class="gcal-cal-dot" style="background:#0b8043;"></span>
                                 Extraescolares
+                            </label>
+                            <label class="gcal-cal-item">
+                                <span class="gcal-cal-dot" style="background:#eab308;"></span>
+                                Visitas de Naia
                             </label>
                             <label class="gcal-cal-item">
                                 <span class="gcal-cal-dot" style="background:#7c3aed;"></span>
