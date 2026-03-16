@@ -2310,8 +2310,18 @@
                 cancelButtonText: 'Cancelar',
                 preConfirm: () => {
                     const val = document.getElementById('clima-sel')?.value;
+                    const presup = document.getElementById('presup-sel')?.value;
+
+                    // Validar que se haya seleccionado el clima si no se detectó automáticamente
+                    if (!val && !weatherDesc) {
+                        Swal.showValidationMessage(
+                            `<span style="font-size:0.88rem;">☝️ Elige el tiempo que hace hoy y tu presupuesto para continuar</span>`
+                        );
+                        return false;
+                    }
+
                     climaSeleccionado = val || (weatherDesc ? weatherDesc : 'tiempo normal');
-                    presupuestoSeleccionado = document.getElementById('presup-sel')?.value || 'medio';
+                    presupuestoSeleccionado = presup || 'medio';
                     return true;
                 }
             });
