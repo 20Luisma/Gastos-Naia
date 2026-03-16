@@ -2411,12 +2411,6 @@
                     }
                 });
 
-                // Enviar automáticamente a Telegram también al generar
-                fetch('?action=telegram_send_plan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ plan: rawPlan, clima: climaTexto })
-                }).catch(() => {});  // Silencioso si falla
 
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#1a1a2e', color: '#fff' });
