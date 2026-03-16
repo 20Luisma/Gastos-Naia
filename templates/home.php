@@ -1,3 +1,20 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  🤖 REGLA PARA LA IA — LEER SIEMPRE ANTES DE EDITAR            ║
+  ║                                                                  ║
+  ║  Cada vez que modifiques  app.js  o  styles.css,                ║
+  ║  DEBES subir el número de versión en las dos líneas de abajo:   ║
+  ║                                                                  ║
+  ║    <link rel="stylesheet" href="assets/styles.css?v=X.X">       ║
+  ║    <script src="assets/app.js?v=X.X" defer></script>            ║
+  ║                                                                  ║
+  ║  Versión actual: v=3.4                                           ║
+  ║  → Incrementar a v=3.5 en el próximo cambio de assets           ║
+  ║                                                                  ║
+  ║  Si no se hace, el navegador carga la versión antigua (caché)   ║
+  ║  y los cambios no se verán sin Ctrl+Shift+R.                    ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
 <!DOCTYPE html>
 <html lang="es">
 
