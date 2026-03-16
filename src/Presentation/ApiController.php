@@ -601,6 +601,51 @@ class ApiController
                     foreach ($newItems as $item) {
                         $created[] = $this->getCalendarRepository()->createEvent($calId, $item);
                     }
+
+                    // Notificar a Telegram si hay eventos batch creados
+                    if ($this->telegramService && count($newItems) > 0) {
+                        $first = $newItems[0];
+                        $summary = $first['summary'] ?? ($first['title'] ?? 'Sin título');
+                        
+                        $type = $first['colorId'] ?? '1';
+                        $typeName = match ($type) {
+                            '10' => '🟢 Extraescolar',
+                            '3'  => '🟣 Cita / Agenda',
+                            '11' => '🔴 NOTA IMPORTANTE',
+                            '6'  => '🟠 Visita de Naia',
+                            default => '📅 Evento'
+                        };
+
+                        $msg = "<b>{$typeName} (Repetido)</b>\n\n";
+                        $msg .= "<b>Evento:</b> {$summary}\n";
+                        $msg .= "<b>Repeticiones creadas:</b> " . count($newItems) . "\n";
+                        
+                        $datesStr = [];
+                        foreach ($newItems as $it) {
+                            $dateRaw = $it['start'];
+                            if (is_array($dateRaw)) {
+                                $dateRaw = $dateRaw['date'] ?? ($dateRaw['dateTime'] ?? '');
+                            }
+                            if ($dateRaw) {
+                                $datesStr[] = date('d/m/Y', strtotime($dateRaw));
+                            }
+                        }
+                        
+                        if (count($datesStr) > 0) {
+                            $display = array_slice($datesStr, 0, 5);
+                            $msg .= "<b>Fechas:</b> " . implode(', ', $display);
+                            if (count($datesStr) > 5) {
+                                $msg .= " ...y " . (count($datesStr) - 5) . " más";
+                            }
+                            $msg .= "\n";
+                        }
+                        
+                        if (!empty($first['description'])) {
+                            $msg .= "\n<i>{$first['description']}</i>";
+                        }
+                        $this->telegramService->sendMessage($msg);
+                    }
+
                     $this->jsonResponse(['success' => true, 'count' => count($created)]);
                     break;
 
