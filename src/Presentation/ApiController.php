@@ -228,6 +228,22 @@ class ApiController
                     $this->jsonResponse(['answer' => $answer]);
                     break;
 
+                case 'telegram_send_plan':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    $planText = $input['plan'] ?? '';
+                    $clima    = $input['clima'] ?? '';
+                    if (empty($planText)) {
+                        throw new \Exception('El plan no puede estar vacío.');
+                    }
+                    if (!$this->telegramService) {
+                        throw new \Exception('Telegram no está configurado.');
+                    }
+                    $header = "🗓️ <b>Plan para hoy</b>" . ($clima ? " · <i>{$clima}</i>" : "") . "\n\n";
+                    $this->telegramService->sendMessage($header . $planText);
+                    $this->jsonResponse(['success' => true]);
+                    break;
+
                 case 'add':
                     $this->requirePost();
                     $input = $this->getJsonInput();

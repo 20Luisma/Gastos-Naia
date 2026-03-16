@@ -2318,7 +2318,7 @@
                 'mercados, escapadas y compras divertidas'
             ];
             const tematica = tematicas[Math.floor(Math.random() * tematicas.length)];
-            const prompt = `Actúa como un experto planificador familiar local y práctico. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años. REGLAS IMPORTANTES: (1) Todo el plan debe estar concentrado en UNA SOLA ZONA de Barcelona o alrededores (máximo 20km del centro), no mezcles sitios que estén lejos entre sí como Barceloneta + Montjuïc + Gòtic en la misma tarde; (2) Los desplazamientos entre actividades deben ser cortos, máximo 10-15 minutos andando o en metro; (3) Adapta al clima: si llueve, interior; si sol, al aire libre. Propón lugares CONCRETOS y conocidos. Incluye una sugerencia para comer/merendar dentro de la misma zona. Formato lista con emojis y horarios. Sin introducción.`;
+            const prompt = `Actúa como un experto planificador familiar local y práctico. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años. REGLAS IMPORTANTES: (1) Todo el plan debe estar concentrado en UNA SOLA ZONA de Barcelona o alrededores (máximo 20km del centro); (2) Los desplazamientos entre actividades deben ser cortos, máximo 10-15 minutos andando o en metro; (3) Adapta al clima: si llueve, interior; si sol, al aire libre; (4) IMPORTANTE: para cada lugar o restaurante que menciones, añade al final del punto el enlace de Google Maps usando este formato exacto: [Ver en Maps](https://www.google.com/maps/search/NOMBRE+DEL+LUGAR+Barcelona). Propón lugares CONCRETOS y conocidos. Incluye una sugerencia para comer/merendar. Formato lista con emojis y horarios. Sin introducción.`;
 
             Swal.fire({
                 title: '⏳ Generando plan...',
@@ -2339,8 +2339,12 @@
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
 
-                let htmlPlan = data.answer
+                const rawPlan = data.answer;
+
+                // Formato HTML para mostrar en pantalla
+                let htmlPlan = rawPlan
                     .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                    .replace(/\[Ver en Maps\]\((https?:\/\/[^\)]+)\)/g, '<a href="$1" target="_blank" style="color:#8B5CF6; font-size:0.8rem;">📍 Ver en Maps</a>')
                     .replace(/\n\n/g, '<br><br>')
                     .replace(/\n/g, '<br>');
 
@@ -2351,8 +2355,33 @@
                     color: '#fff',
                     confirmButtonText: '¡Perfecto!',
                     confirmButtonColor: '#8B5CF6',
+                    showCancelButton: true,
+                    cancelButtonText: '📱 Enviar a Telegram',
+                    cancelButtonColor: '#2563EB',
                     width: '580px',
+                    reverseButtons: true,
+                }).then(async (result) => {
+                    if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+                        // Enviar a Telegram
+                        try {
+                            await fetch('?action=telegram_send_plan', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ plan: rawPlan, clima: climaTexto })
+                            });
+                            Swal.fire({ icon: 'success', title: '¡Enviado!', text: 'El plan ya está en tu Telegram 📱', background: '#1a1a2e', color: '#fff', timer: 2000, showConfirmButton: false });
+                        } catch (e) {
+                            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo enviar a Telegram', background: '#1a1a2e', color: '#fff' });
+                        }
+                    }
                 });
+
+                // Enviar automáticamente a Telegram también al generar
+                fetch('?action=telegram_send_plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plan: rawPlan, clima: climaTexto })
+                }).catch(() => {});  // Silencioso si falla
 
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#1a1a2e', color: '#fff' });
