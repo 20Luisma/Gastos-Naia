@@ -113,9 +113,10 @@ class GoogleCalendarRepository
         $created = $this->calendarService->events->insert($calendarId, $event);
 
         return [
-            'id' => $created->getId(),
-            'title' => $created->getSummary(),
-            'start' => $created->getStart()->getDateTime() ?? $created->getStart()->getDate(),
+            'id'              => $created->getId(),
+            'title'           => $created->getSummary(),
+            'start'           => $created->getStart()->getDateTime() ?? $created->getStart()->getDate(),
+            'reminderMinutes' => isset($data['reminderMinutes']) ? (int) $data['reminderMinutes'] : null,
         ];
     }
 
@@ -173,9 +174,10 @@ class GoogleCalendarRepository
         $updated = $this->calendarService->events->update($calendarId, $eventId, $event);
 
         return [
-            'id' => $updated->getId(),
-            'title' => $updated->getSummary(),
-            'start' => $updated->getStart()->getDateTime() ?? $updated->getStart()->getDate(),
+            'id'              => $updated->getId(),
+            'title'           => $updated->getSummary(),
+            'start'           => $updated->getStart()->getDateTime() ?? $updated->getStart()->getDate(),
+            'reminderMinutes' => array_key_exists('reminderMinutes', $data) ? (isset($data['reminderMinutes']) ? (int)$data['reminderMinutes'] : null) : null,
         ];
     }
 

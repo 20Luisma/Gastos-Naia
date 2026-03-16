@@ -682,6 +682,11 @@ class ApiController
                     }
                     $event = $this->getCalendarRepository()->createEvent($calId, $input);
 
+                    // Guardar recordatorio en reminders.json si tiene alarma
+                    if (!empty($event['reminderMinutes']) && !empty($event['start'])) {
+                        $this->saveReminder($event['id'], $event['title'], $event['start'], (int)$event['reminderMinutes']);
+                    }
+
                     // Notificar a Telegram
                     if ($this->telegramService) {
                         $summary = $input['summary'] ?? ($input['title'] ?? 'Sin título');
@@ -709,6 +714,9 @@ class ApiController
                         $msg = "<b>{$typeName}</b>\n\n";
                         $msg .= "<b>Evento:</b> {$summary}\n";
                         $msg .= "<b>Fecha:</b> {$date}\n";
+                        if (!empty($event['reminderMinutes'])) {
+                            $msg .= "<b>⏰ Alarma:</b> {$event['reminderMinutes']} min antes\n";
+                        }
                         if (!empty($input['description'])) {
                             $msg .= "\n<i>{$input['description']}</i>";
                         }
@@ -727,6 +735,16 @@ class ApiController
                         throw new \Exception('Faltan parámetros: calendarId o eventId');
                     }
                     $event = $this->getCalendarRepository()->updateEvent($calId, $eventId, $input);
+
+                    // Actualizar recordatorio en reminders.json
+                    if (array_key_exists('reminderMinutes', $input)) {
+                        if (!empty($event['reminderMinutes']) && !empty($event['start'])) {
+                            $this->saveReminder($event['id'], $event['title'], $event['start'], (int)$event['reminderMinutes']);
+                        } else {
+                            $this->deleteReminder($eventId);
+                        }
+                    }
+
                     $this->jsonResponse(['success' => true, 'event' => $event]);
                     break;
 
@@ -739,6 +757,8 @@ class ApiController
                         throw new \Exception('Faltan parámetros: calendarId o eventId');
                     }
                     $ok = $this->getCalendarRepository()->deleteEvent($calId, $eventId);
+                    // Eliminar recordatorio si existía
+                    $this->deleteReminder($eventId);
                     $this->jsonResponse(['success' => $ok]);
                     break;
 
@@ -903,4 +923,49 @@ class ApiController
         }
         return $date;
     }
+
+    /**
+     * Guarda o actualiza un recordatorio en storage/reminders.json
+     */
+    private function saveReminder(string $eventId, string $title, string $startIso, int $reminderMinutes): void
+    {
+        $file = __DIR__ . '/../../storage/reminders.json';
+        $reminders = file_exists($file) ? json_decode(file_get_contents($file), true) ?? [] : [];
+
+        // Hora de disparo = hora del evento - reminderMinutes
+        $tz = new \DateTimeZone('Europe/Madrid');
+        $eventTime = new \DateTime($startIso, $tz);
+        $fireAt = clone $eventTime;
+        $fireAt->modify("-{$reminderMinutes} minutes");
+
+        // Sobrescribir si ya existe
+        $reminders[$eventId] = [
+            'eventId'         => $eventId,
+            'title'           => $title,
+            'startIso'        => $startIso,
+            'reminderMinutes' => $reminderMinutes,
+            'fireAt'          => $fireAt->format(\DateTime::RFC3339),
+            'sent'            => false,
+        ];
+
+        // Asegurar que el directorio existe
+        if (!is_dir(dirname($file))) {
+            mkdir(dirname($file), 0755, true);
+        }
+        file_put_contents($file, json_encode(array_values($reminders), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
+     * Elimina un recordatorio de storage/reminders.json por eventId
+     */
+    private function deleteReminder(string $eventId): void
+    {
+        $file = __DIR__ . '/../../storage/reminders.json';
+        if (!file_exists($file)) return;
+
+        $reminders = json_decode(file_get_contents($file), true) ?? [];
+        $reminders = array_filter($reminders, fn($r) => ($r['eventId'] ?? '') !== $eventId);
+        file_put_contents($file, json_encode(array_values($reminders), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
 }
+
