@@ -8,8 +8,8 @@
     <title>Gastos Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=2.8">
-    <script src="assets/app.js?v=2.8" defer></script>
+    <link rel="stylesheet" href="assets/styles.css?v=2.9">
+    <script src="assets/app.js?v=2.9" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
@@ -452,6 +452,13 @@
                                     <span>📋</span> Notas importantes
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Botón IA (Varita Mágica) -->
+                        <div style="margin-top: 1.5rem; text-align: center;">
+                            <button id="btn-ia-plan" type="button" class="btn btn--primary" style="width: 100%; justify-content: flex-start; background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); border: none; font-size: 0.9rem; padding: 0.8rem 1rem;">
+                                <span>🪄</span> Sugerir Plan Sorpresa
+                            </button>
                         </div>
 
                         <!-- Mini-calendar -->
