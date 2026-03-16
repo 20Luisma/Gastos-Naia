@@ -1190,6 +1190,7 @@
 
     let editingEventId = null; // Guardar ID si estamos editando
     let editingEventSource = null; // 'local' o 'gcal'
+    let repeatEveryNWeeks = 1; // Para Visitas: frecuencia cada N semanas
 
     function openModal(type, day = null, editEv = null) {
         if (!$modalOverlay) return;
@@ -1263,6 +1264,19 @@
                 document.getElementById('cita-date').value = `${y}-${m}-${d}`;
             }
         }
+
+        // Mostrar/ocultar selector de frecuencia según tipo
+        const $freqContainer = document.getElementById('cal-frecuencia-container');
+        const $wdLabel = document.getElementById('cal-wd-label');
+        if ($freqContainer) {
+            const showFreq = (type === 'visita');
+            $freqContainer.style.display = showFreq ? 'block' : 'none';
+            if ($wdLabel) $wdLabel.textContent = showFreq ? 'DÍA DE LA SEMANA:' : 'DÍAS DE LA SEMANA:';
+        }
+        // Resetear frecuencia al abrir el modal
+        repeatEveryNWeeks = 1;
+        const $freqLabel = document.getElementById('cal-freq-label');
+        if ($freqLabel) $freqLabel.textContent = 'Cada semana';
 
         $modalOverlay.style.display = 'flex';
     }
@@ -1357,7 +1371,7 @@
         const until = $repeatUntil?.value;
         const start = document.getElementById('cal-event-start')?.value;
         if (!checked.length || !until || !start) { $repeatPreview.textContent = ''; return; }
-        const count = getRecurringDates(start, until, checked).length;
+        const count = getRecurringDates(start, until, checked, repeatEveryNWeeks).length;
         $repeatPreview.textContent = `Se crearán ${count} eventos`;
     }
 
@@ -1368,19 +1382,46 @@
 
     $repeatUntil?.addEventListener('change', updateRepeatPreview);
     document.querySelectorAll('#cal-repeat-options .gcal-wd-btn input').forEach(cb => {
-        cb.addEventListener('change', updateRepeatPreview);
+        cb.addEventListener('change', (e) => {
+            // Si es modo Visita, funciona como radio: solo un día seleccionado
+            const currentType = $formEvento?.dataset.currentType || 'evento';
+            if (currentType === 'visita') {
+                document.querySelectorAll('#cal-repeat-options .gcal-wd-btn input').forEach(other => {
+                    if (other !== e.target) other.checked = false;
+                });
+            }
+            updateRepeatPreview();
+        });
     });
 
-    // Genera lista de fechas (YYYY-MM-DD) recurrentes
-    function getRecurringDates(startDate, untilDate, weekdays) {
+    // Botones de frecuencia
+    document.getElementById('btn-freq-minus')?.addEventListener('click', () => {
+        if (repeatEveryNWeeks > 1) repeatEveryNWeeks--;
+        const lbl = document.getElementById('cal-freq-label');
+        if (lbl) lbl.textContent = repeatEveryNWeeks === 1 ? 'Cada semana' : `Cada ${repeatEveryNWeeks} semanas`;
+        updateRepeatPreview();
+    });
+    document.getElementById('btn-freq-plus')?.addEventListener('click', () => {
+        if (repeatEveryNWeeks < 8) repeatEveryNWeeks++;
+        const lbl = document.getElementById('cal-freq-label');
+        if (lbl) lbl.textContent = repeatEveryNWeeks === 1 ? 'Cada semana' : `Cada ${repeatEveryNWeeks} semanas`;
+        updateRepeatPreview();
+    });
+
+    // Genera lista de fechas (YYYY-MM-DD) recurrentes con soporte a cada N semanas
+    function getRecurringDates(startDate, untilDate, weekdays, nWeeks = 1) {
         const dates = [];
         const start = new Date(startDate + 'T12:00:00');
         const until = new Date(untilDate + 'T23:59:59');
         const cur = new Date(start);
-        // Ajustamos al inicio de la semana de la fecha de inicio
+        const n = nWeeks < 1 ? 1 : nWeeks;
         while (cur <= until) {
             if (weekdays.includes(cur.getDay())) {
-                dates.push(cur.toISOString().slice(0, 10));
+                // Calcula semanas transcurridas desde el inicio
+                const weeksElapsed = Math.round((cur - start) / (7 * 24 * 60 * 60 * 1000));
+                if (weeksElapsed % n === 0) {
+                    dates.push(cur.toISOString().slice(0, 10));
+                }
             }
             cur.setDate(cur.getDate() + 1);
         }
@@ -1435,7 +1476,7 @@
         const isVisita = currentType === 'visita';
 
         if (isRepeat && weekdays.length > 0 && untilDate) {
-            const dates = getRecurringDates(startDate, untilDate, weekdays);
+            const dates = getRecurringDates(startDate, untilDate, weekdays, isVisita ? repeatEveryNWeeks : 1);
             if (dates.length === 0) {
                 $result.className = 'form__result form__result--error';
                 $result.textContent = '❌ No hay fechas que coincidan con esos criterios.';

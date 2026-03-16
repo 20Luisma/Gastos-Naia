@@ -616,7 +616,16 @@
 
                             <div id="cal-repeat-options"
                                 style="display:none; margin-top:12px; padding:12px; background:rgba(124,58,237,0.07); border-radius:8px; border:1px solid rgba(124,58,237,0.2);">
-                                <p class="form__label" style="margin-bottom:8px;">Días de la semana:</p>
+                                <!-- Frecuencia (solo Visitas) -->
+                                <div id="cal-frecuencia-container" style="display:none; margin-bottom:14px;">
+                                    <p class="form__label" style="margin-bottom:8px; letter-spacing:0.8px; font-size:0.75rem;">FRECUENCIA:</p>
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <button type="button" id="btn-freq-minus" style="width:36px;height:36px;border-radius:8px;border:none;background:rgba(255,255,255,0.07);color:#eab308;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+                                        <span id="cal-freq-label" style="color:#fff;font-weight:600;font-size:0.9rem;white-space:nowrap;">Cada semana</span>
+                                        <button type="button" id="btn-freq-plus" style="width:36px;height:36px;border-radius:8px;border:none;background:rgba(255,255,255,0.07);color:#eab308;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+                                    </div>
+                                </div>
+                                <p class="form__label" style="margin-bottom:8px;" id="cal-wd-label">Días de la semana:</p>
                                 <div class="gcal-weekday-picker">
                                     <label class="gcal-wd-btn"><input type="checkbox" value="1"> Lun</label>
                                     <label class="gcal-wd-btn"><input type="checkbox" value="2"> Mar</label>
