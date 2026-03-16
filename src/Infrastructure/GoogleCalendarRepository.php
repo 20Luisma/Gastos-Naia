@@ -70,7 +70,9 @@ class GoogleCalendarRepository
         $event = new Event([
             'summary' => $data['title'] ?? 'Nuevo evento',
             'description' => $data['description'] ?? '',
-            'location' => $data['location'] ?? '',
+            // Evitamos añadir 'location' a Google Calendar para que no concatene 
+            // automáticamente la URL de Google Maps o abrume el UI de GCal.
+            'location' => '',
             'colorId' => $data['colorId'] ?? null,
         ]);
 
@@ -118,8 +120,8 @@ class GoogleCalendarRepository
             $event->setSummary($data['title']);
         if (isset($data['description']))
             $event->setDescription($data['description']);
-        if (isset($data['location']))
-            $event->setLocation($data['location']);
+        // location = '' intencionadamente para evitar previsualización de G.Maps
+        $event->setLocation('');
         if (isset($data['colorId']))
             $event->setColorId($data['colorId']);
 
