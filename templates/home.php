@@ -8,8 +8,8 @@
     <title>Gastos Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=2.9">
-    <script src="assets/app.js?v=2.9" defer></script>
+    <link rel="stylesheet" href="assets/styles.css?v=3.0">
+    <script src="assets/app.js?v=3.0" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>

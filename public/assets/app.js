@@ -2305,7 +2305,20 @@
             
             // 3. Mostrar loading y llamar a la IA
             const hoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-            const prompt = `Actúa como un experto planificador familiar divertido. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan original y estructurado de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años adaptándolo al clima: si llueve pon actividades de interior o con techo; si hace sol aprovecha parques o playa; si hace frío pon planes más cálidos y acogedores. Incluye actividades variadas y sugerencias para comer o merendar. Formato en lista con emojis y horarios. Sin introducción.`;
+            const tematicas = [
+                'aventura urbana y exploración de barrios', 
+                'cultura y museos interactivos',
+                'naturaleza y aire libre',
+                'creatividad y manualidades o talleres',
+                'deporte y movimiento',
+                'gastronomía y descubrimiento de comidas',
+                'cine, libros y ocio tranquilo',
+                'tecnología y ciencia',
+                'historia y monumentos de Barcelona',
+                'mercados, escapadas y compras divertidas'
+            ];
+            const tematica = tematicas[Math.floor(Math.random() * tematicas.length)];
+            const prompt = `Actúa como un experto planificador familiar divertido. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", estructurado de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años adaptándolo al clima: si llueve pon actividades de interior o con techo; si hace sol aprovecha parques o playa; si hace frío pon planes más cálidos. Incluye sugerencias específicas de Barcelona y para comer o merendar. Propón lugares y actividades CONCRETOS, no genéricos. Formato en lista con emojis y horarios. Sin introducción.`;
 
             Swal.fire({
                 title: '⏳ Generando plan...',

@@ -201,7 +201,7 @@ class AskAiUseCase
 
         $payload = [
             'model' => 'gpt-4o',
-            'temperature' => 0.1,
+            'temperature' => 0.9,
             'messages' => [
                 ['role' => 'system', 'content' => $systemPrompt],
                 ['role' => 'user', 'content' => $question],
