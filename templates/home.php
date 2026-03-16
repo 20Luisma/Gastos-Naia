@@ -61,6 +61,11 @@
                             <span class="nav__btn-icon">✨</span>
                             <span>Nuevo Año</span>
                         </button>
+                        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:4px 0;">
+                        <button class="nav-dropdown__item" data-view="ai">
+                            <span class="nav__btn-icon">🤖</span>
+                            <span>Agente IA Alfred</span>
+                        </button>
                     </div>
                 </div>
 
@@ -76,12 +81,6 @@
                     <span>Diario de Naia</span>
                 </button>
 
-
-                <!-- Agente IA Alfred (Derecha) -->
-                <button class="nav__btn nav__btn--ai" data-view="ai" title="Agente IA Alfred">
-                    <span class="nav__btn-icon">🤖</span>
-                    <span>AGENTE IA ALFRED</span>
-                </button>
 
                 <!-- Salir -->
                 <a href="?action=logout" class="nav__btn nav__btn--logout" title="Cerrar sesión" onclick="handleLogout(event); return false;">
