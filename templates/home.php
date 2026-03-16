@@ -455,9 +455,27 @@
                         </div>
 
                         <!-- Botón IA (Varita Mágica) -->
-                        <div style="margin-top: 1.5rem; text-align: center;">
-                            <button id="btn-ia-plan" type="button" class="btn btn--primary" style="width: 100%; justify-content: flex-start; background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); border: none; font-size: 0.9rem; padding: 0.8rem 1rem;">
-                                <span>🪄</span> Sugerir Plan Sorpresa
+                        <div style="margin-top: 1.2rem;">
+                            <button id="btn-ia-plan" type="button" style="
+                                width: 100%;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.5rem;
+                                background: rgba(139, 92, 246, 0.08);
+                                border: 1px solid rgba(139, 92, 246, 0.35);
+                                border-radius: 10px;
+                                color: rgba(200, 180, 255, 0.9);
+                                font-size: 0.82rem;
+                                font-weight: 500;
+                                letter-spacing: 0.03em;
+                                padding: 0.65rem 0.9rem;
+                                cursor: pointer;
+                                transition: all 0.2s ease;
+                            "
+                            onmouseover="this.style.background='rgba(139,92,246,0.18)'; this.style.borderColor='rgba(139,92,246,0.6)';"
+                            onmouseout="this.style.background='rgba(139,92,246,0.08)'; this.style.borderColor='rgba(139,92,246,0.35)';">
+                                <span style="font-size:1rem;">✨</span>
+                                <span>Sugerir plan para hoy</span>
                             </button>
                         </div>
 

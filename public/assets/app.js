@@ -2225,4 +2225,51 @@
         });
     }
 
+    // ── Botón IA "Sugerir plan para hoy" en Calendario ──────────────────────
+    const btnIaPlan = document.getElementById('btn-ia-plan');
+    if (btnIaPlan) {
+        btnIaPlan.addEventListener('click', async () => {
+            const hoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            const prompt = `Actúa como un experto planificador familiar divertido. Hoy es ${hoy}. Diseña un plan original y estructurado de 6 horas en Barcelona o alrededores para hacer hoy junto a mi hija Naia de 10 años. Incluye actividades variadas (algunas gratuitas, otras de pago, parques, museos o manualidades) y un par de sugerencias concretas para comer o merendar. Formato en lista visual con emojis y horarios aproximados (entre 12:00 y 18:00). Empieza directamente con el plan sin introducción.`;
+
+            Swal.fire({
+                title: '✨ Generando plan para hoy...',
+                html: `<span style="color:rgba(255,255,255,0.6); font-size:0.9rem;">Pensando actividades para Naia en Barcelona...</span>`,
+                allowOutsideClick: false,
+                background: '#1a1a2e',
+                color: '#fff',
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const res = await fetch('?action=ai_ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: prompt })
+                });
+                if (!res.ok) throw new Error('Error de conexión con la IA');
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                let htmlPlan = data.answer
+                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                    .replace(/\n\n/g, '<br><br>')
+                    .replace(/\n/g, '<br>');
+
+                Swal.fire({
+                    title: '✨ Plan para hoy',
+                    html: `<div style="text-align:left; font-size:0.93rem; line-height:1.6; color:rgba(255,255,255,0.85); max-height:55vh; overflow-y:auto; padding-right:6px;">${htmlPlan}</div>`,
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    confirmButtonText: '¡Perfecto!',
+                    confirmButtonColor: '#8B5CF6',
+                    width: '560px',
+                });
+
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#1a1a2e', color: '#fff' });
+            }
+        });
+    }
+
 })();
