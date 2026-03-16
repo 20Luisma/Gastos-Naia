@@ -590,6 +590,20 @@ class ApiController
                     $this->jsonResponse(['events' => $events, 'year' => $year, 'month' => $month]);
                     break;
 
+                case 'calendar_create_batch':
+                    $this->requirePost();
+                    $newItems = $this->getJsonInput();
+                    if (!is_array($newItems))
+                        throw new \Exception('Se espera un array de eventos');
+                    $calId = $this->config['calendar_id'] ?? '';
+                    if (empty($calId)) throw new \Exception('calendar_id no configurado');
+                    $created = [];
+                    foreach ($newItems as $item) {
+                        $created[] = $this->getCalendarRepository()->createEvent($calId, $item);
+                    }
+                    $this->jsonResponse(['success' => true, 'count' => count($created)]);
+                    break;
+
                 case 'calendar_create':
                     $this->requirePost();
                     $input = $this->getJsonInput();
@@ -617,8 +631,9 @@ class ApiController
                         $type = $input['colorId'] ?? '1'; // Default color mapping or type
                         $typeName = match ($type) {
                             '10' => '🟢 Extraescolar',
-                            '3' => '🟣 Cita / Agenda',
+                            '3'  => '🟣 Cita / Agenda',
                             '11' => '🔴 NOTA IMPORTANTE',
+                            '6'  => '🟠 Visita de Naia',
                             default => '📅 Evento'
                         };
 

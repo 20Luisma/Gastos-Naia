@@ -1866,6 +1866,18 @@ body::before {
     /* Rojo (Notas importantes) */
 }
 
+.gcal-event-pill.gcal-event--color-6 {
+    background: rgba(234, 179, 8, 0.25);
+    border-left-color: #EAB308;
+    /* Amarillo (Visita) */
+}
+
+.gcal-day-event-item.gcal-event--color-6 {
+    border-left-color: #EAB308;
+    background: rgba(234, 179, 8, 0.15);
+    /* Amarillo (Visita) */
+}
+
 .gcal-event-pill:hover {
     opacity: 0.8;
 }
