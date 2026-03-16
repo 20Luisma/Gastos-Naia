@@ -2229,12 +2229,87 @@
     const btnIaPlan = document.getElementById('btn-ia-plan');
     if (btnIaPlan) {
         btnIaPlan.addEventListener('click', async () => {
+            
+            // 1. Intentar obtener el tiempo real en Barcelona via wttr.in
+            let weatherDesc = null;
+            let weatherEmoji = '🌤️';
+            try {
+                const wRes = await fetch('https://wttr.in/Barcelona?format=j1', { signal: AbortSignal.timeout(5000) });
+                if (wRes.ok) {
+                    const wData = await wRes.json();
+                    const current = wData.current_condition?.[0];
+                    if (current) {
+                        const tempC = current.temp_C;
+                        const desc = current.lang_es?.[0]?.value || current.weatherDesc?.[0]?.value || '';
+                        const code = parseInt(current.weatherCode);
+                        // Asignar emoji según código de tiempo
+                        if ([113].includes(code))               weatherEmoji = '☀️';
+                        else if ([116, 119].includes(code))      weatherEmoji = '⛅';
+                        else if ([122, 143, 248].includes(code)) weatherEmoji = '☁️';
+                        else if ([176,263,266,281,284,293,296,299,302,305,308,311,314,317,320,323,326,329,332,335,338,350,353,356,359,362,365,368,371,374,377].includes(code)) weatherEmoji = '🌧️';
+                        else if ([389,392,395].includes(code))   weatherEmoji = '⛈️';
+                        weatherDesc = `${weatherEmoji} ${desc}, ${tempC}°C`;
+                    }
+                }
+            } catch (_) { /* Si falla la API de tiempo, continuamos sin él */ }
+            
+            // 2. Mostrar opciones: clima detectado o manual
+            const opcionesClima = {
+                'sol': '☀️ Soleado / Buen tiempo',
+                'nublado': '⛅ Nublado / Fresco',
+                'lluvia': '🌧️ Lluvia / Mal tiempo',
+                'calor': '🌡️ Mucho calor',
+                'frio': '❄️ Frío intenso',
+            };
+            
+            let climaSeleccionado;
+            
+            const detectMsg = weatherDesc
+                ? `<p style="color:rgba(255,255,255,0.7); margin-bottom:1rem;">Tiempo detectado en Barcelona: <b style="color:#fff">${weatherDesc}</b></p>`
+                : `<p style="color:rgba(255,255,255,0.6); margin-bottom:1rem; font-size:0.85rem;">No se pudo detectar el tiempo automáticamente.</p>`;
+
+            const selectHtml = `
+                ${detectMsg}
+                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.8rem;">¿Con qué tiempo quieres planear?</p>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+                    ${Object.entries(opcionesClima).map(([k, v]) => `
+                        <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.style.background='rgba(255,255,255,0.06)'); this.style.background='rgba(139,92,246,0.35)'; document.getElementById('clima-sel').value='${k}';" 
+                            style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:8px 12px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
+                            ${v}
+                        </button>`).join('')}
+                </div>
+                <input type="hidden" id="clima-sel" value="">
+            `;
+            
+            const { isConfirmed } = await Swal.fire({
+                title: '✨ Plan para hoy',
+                html: selectHtml,
+                background: '#1a1a2e',
+                color: '#fff',
+                confirmButtonText: 'Generar plan →',
+                confirmButtonColor: '#8B5CF6',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const val = document.getElementById('clima-sel')?.value;
+                    climaSeleccionado = val || (weatherDesc ? weatherDesc : 'tiempo normal');
+                    return true;
+                }
+            });
+            
+            if (!isConfirmed) return;
+            
+            // Texto legible del clima para el prompt
+            const climaTexto = opcionesClima[climaSeleccionado] 
+                || (weatherDesc ? weatherDesc : 'tiempo agradable');
+            
+            // 3. Mostrar loading y llamar a la IA
             const hoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-            const prompt = `Actúa como un experto planificador familiar divertido. Hoy es ${hoy}. Diseña un plan original y estructurado de 6 horas en Barcelona o alrededores para hacer hoy junto a mi hija Naia de 10 años. Incluye actividades variadas (algunas gratuitas, otras de pago, parques, museos o manualidades) y un par de sugerencias concretas para comer o merendar. Formato en lista visual con emojis y horarios aproximados (entre 12:00 y 18:00). Empieza directamente con el plan sin introducción.`;
+            const prompt = `Actúa como un experto planificador familiar divertido. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan original y estructurado de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años adaptándolo al clima: si llueve pon actividades de interior o con techo; si hace sol aprovecha parques o playa; si hace frío pon planes más cálidos y acogedores. Incluye actividades variadas y sugerencias para comer o merendar. Formato en lista con emojis y horarios. Sin introducción.`;
 
             Swal.fire({
-                title: '✨ Generando plan para hoy...',
-                html: `<span style="color:rgba(255,255,255,0.6); font-size:0.9rem;">Pensando actividades para Naia en Barcelona...</span>`,
+                title: '⏳ Generando plan...',
+                html: `<span style="color:rgba(255,255,255,0.6); font-size:0.9rem;">Adaptando el plan al tiempo de hoy en Barcelona...</span>`,
                 allowOutsideClick: false,
                 background: '#1a1a2e',
                 color: '#fff',
@@ -2257,13 +2332,13 @@
                     .replace(/\n/g, '<br>');
 
                 Swal.fire({
-                    title: '✨ Plan para hoy',
+                    title: `✨ Plan para hoy · ${climaTexto.split(' ').slice(0,2).join(' ')}`,
                     html: `<div style="text-align:left; font-size:0.93rem; line-height:1.6; color:rgba(255,255,255,0.85); max-height:55vh; overflow-y:auto; padding-right:6px;">${htmlPlan}</div>`,
                     background: '#1a1a2e',
                     color: '#fff',
                     confirmButtonText: '¡Perfecto!',
                     confirmButtonColor: '#8B5CF6',
-                    width: '560px',
+                    width: '580px',
                 });
 
             } catch (err) {
