@@ -2318,7 +2318,7 @@
                 'mercados, escapadas y compras divertidas'
             ];
             const tematica = tematicas[Math.floor(Math.random() * tematicas.length)];
-            const prompt = `Actúa como un experto planificador familiar divertido. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", estructurado de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años adaptándolo al clima: si llueve pon actividades de interior o con techo; si hace sol aprovecha parques o playa; si hace frío pon planes más cálidos. Incluye sugerencias específicas de Barcelona y para comer o merendar. Propón lugares y actividades CONCRETOS, no genéricos. Formato en lista con emojis y horarios. Sin introducción.`;
+            const prompt = `Actúa como un experto planificador familiar local y práctico. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años. REGLAS IMPORTANTES: (1) Todo el plan debe estar concentrado en UNA SOLA ZONA de Barcelona o alrededores (máximo 20km del centro), no mezcles sitios que estén lejos entre sí como Barceloneta + Montjuïc + Gòtic en la misma tarde; (2) Los desplazamientos entre actividades deben ser cortos, máximo 10-15 minutos andando o en metro; (3) Adapta al clima: si llueve, interior; si sol, al aire libre. Propón lugares CONCRETOS y conocidos. Incluye una sugerencia para comer/merendar dentro de la misma zona. Formato lista con emojis y horarios. Sin introducción.`;
 
             Swal.fire({
                 title: '⏳ Generando plan...',
