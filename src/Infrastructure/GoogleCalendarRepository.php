@@ -77,6 +77,15 @@ class GoogleCalendarRepository
             'colorId' => $data['colorId'] ?? null,
         ]);
 
+        if (isset($data['reminderMinutes']) && $data['reminderMinutes'] !== null) {
+            $event->setReminders(new \Google\Service\Calendar\EventReminders([
+                'useDefault' => false,
+                'overrides' => [
+                    ['method' => 'popup', 'minutes' => (int) $data['reminderMinutes']],
+                ],
+            ]));
+        }
+
         if (!empty($data['allDay'])) {
             // Evento de todo el día
             $startDate = (new \DateTime($data['start']))->format('Y-m-d');
@@ -126,6 +135,21 @@ class GoogleCalendarRepository
         }
         if (isset($data['colorId']))
             $event->setColorId($data['colorId']);
+
+        if (array_key_exists('reminderMinutes', $data)) {
+            if ($data['reminderMinutes'] !== null) {
+                $event->setReminders(new \Google\Service\Calendar\EventReminders([
+                    'useDefault' => false,
+                    'overrides' => [
+                        ['method' => 'popup', 'minutes' => (int) $data['reminderMinutes']],
+                    ],
+                ]));
+            } else {
+                $event->setReminders(new \Google\Service\Calendar\EventReminders([
+                    'useDefault' => true,
+                ]));
+            }
+        }
 
         if (!empty($data['allDay'])) {
             $startDate = (new \DateTime($data['start']))->format('Y-m-d');
