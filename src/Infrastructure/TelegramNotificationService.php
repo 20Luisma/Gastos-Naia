@@ -13,7 +13,7 @@ class TelegramNotificationService
         $this->chatId = $chatId;
     }
 
-    public function sendMessage(string $text): bool
+    public function sendMessage(string $text, bool $useHtml = true): bool
     {
         if (empty($this->token) || empty($this->chatId)) {
             return false;
@@ -23,8 +23,10 @@ class TelegramNotificationService
         $data = [
             'chat_id' => $this->chatId,
             'text' => $text,
-            'parse_mode' => 'HTML'
         ];
+        if ($useHtml) {
+            $data['parse_mode'] = 'HTML';
+        }
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);

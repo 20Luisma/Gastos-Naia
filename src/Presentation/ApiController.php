@@ -239,8 +239,11 @@ class ApiController
                     if (!$this->telegramService) {
                         throw new \Exception('Telegram no está configurado.');
                     }
-                    $header = "🗓️ <b>Plan para hoy</b>" . ($clima ? " · <i>{$clima}</i>" : "") . "\n\n";
-                    $this->telegramService->sendMessage($header . $planText);
+                    $planText = str_replace(['**', '*'], '', $planText); // Quitar negritas y cursivas para no romper HTML
+                    $planText = preg_replace('/\[(.*?)\]\((.*?)\)/', '$1: $2', $planText); // Convertir enlace markdown a texto plano con la URL al lado
+                    
+                    $header = "🗓️ Plan para hoy" . ($clima ? " · $clima" : "") . "\n\n";
+                    $this->telegramService->sendMessage($header . $planText, false);
                     $this->jsonResponse(['success' => true]);
                     break;
 
