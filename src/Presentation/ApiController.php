@@ -239,11 +239,16 @@ class ApiController
                     if (!$this->telegramService) {
                         throw new \Exception('Telegram no está configurado.');
                     }
-                    $planText = str_replace(['**', '*'], '', $planText); // Quitar negritas y cursivas para no romper HTML
-                    $planText = preg_replace('/\[(.*?)\]\((.*?)\)/', '$1: $2', $planText); // Convertir enlace markdown a texto plano con la URL al lado
-                    
-                    $header = "🗓️ Plan para hoy" . ($clima ? " · $clima" : "") . "\n\n";
-                    $this->telegramService->sendMessage($header . $planText, false);
+                    // Telegram requiere HTML pero es muy estricto con las etiquetas.
+                    // 1. Convertimos las negritas markdown a HTML explícito
+                    $planText = preg_replace('/\*\*(.*?)\*\*/', '<b>$1</b>', $planText);
+                    // 2. Quitamos cursivas o negritas de un asterisco para no romper
+                    $planText = str_replace('*', '', $planText); 
+                    // 3. Convertimos los enlaces markdown a la etiqueta <a> de HTML de Telegram
+                    $planText = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/', '<a href="$2">$1</a>', $planText);
+
+                    $header = "🗓️ <b>Plan para hoy</b>" . ($clima ? " · <i>$clima</i>" : "") . "\n\n";
+                    $this->telegramService->sendMessage($header . $planText, true);
                     $this->jsonResponse(['success' => true]);
                     break;
 
