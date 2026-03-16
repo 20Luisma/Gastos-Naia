@@ -2017,10 +2017,27 @@ body::before {
     padding: 1.5rem;
     width: 100%;
     max-width: 480px;
+    max-height: 90vh;
+    overflow-y: scroll;
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8);
     animation: slideUp 0.2s ease;
     position: relative;
     z-index: 501;
+}
+
+.gcal-modal::-webkit-scrollbar {
+    width: 6px;
+}
+.gcal-modal::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+.gcal-modal::-webkit-scrollbar-thumb {
+    background: rgba(124, 58, 237, 0.6);
+    border-radius: 3px;
+}
+.gcal-modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 58, 237, 0.9);
 }
 
 @keyframes slideUp {
