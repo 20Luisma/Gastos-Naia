@@ -2263,6 +2263,7 @@
             };
             
             let climaSeleccionado;
+            let presupuestoSeleccionado = 'medio';
             
             const detectMsg = weatherDesc
                 ? `<p style="color:rgba(255,255,255,0.7); margin-bottom:1rem;">Tiempo detectado en Barcelona: <b style="color:#fff">${weatherDesc}</b></p>`
@@ -2270,15 +2271,32 @@
 
             const selectHtml = `
                 ${detectMsg}
-                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.8rem;">¿Con qué tiempo quieres planear?</p>
-                <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.5rem;">¿Con qué tiempo quieres planear?</p>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:1.2rem;">
                     ${Object.entries(opcionesClima).map(([k, v]) => `
-                        <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.style.background='rgba(255,255,255,0.06)'); this.style.background='rgba(139,92,246,0.35)'; document.getElementById('clima-sel').value='${k}';" 
-                            style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:8px 12px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
+                        <button onclick="this.closest('.swal2-popup').querySelectorAll('.clima-btn').forEach(b=>b.style.background='rgba(255,255,255,0.06)'); this.style.background='rgba(139,92,246,0.35)'; document.getElementById('clima-sel').value='${k}';" 
+                            class="clima-btn"
+                            style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:7px 11px; cursor:pointer; font-size:0.83rem; transition:all 0.15s;">
                             ${v}
                         </button>`).join('')}
                 </div>
+                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.5rem;">💰 Presupuesto para el día</p>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>{b.style.background='rgba(255,255,255,0.06)';b.style.borderColor='rgba(255,255,255,0.15)'}); this.style.background='rgba(34,197,94,0.25)'; this.style.borderColor='rgba(34,197,94,0.6)'; document.getElementById('presup-sel').value='bajo';"
+                        style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:9px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
+                        💚 Bajo<br><span style="font-size:0.72rem; opacity:0.6;">Gratuito o casi</span>
+                    </button>
+                    <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>{b.style.background='rgba(255,255,255,0.06)';b.style.borderColor='rgba(255,255,255,0.15)'}); this.style.background='rgba(234,179,8,0.25)'; this.style.borderColor='rgba(234,179,8,0.6)'; document.getElementById('presup-sel').value='medio';"
+                        style="flex:1; background:rgba(234,179,8,0.25); border:1px solid rgba(234,179,8,0.6); border-radius:8px; color:#fff; padding:9px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
+                        🟡 Medio<br><span style="font-size:0.72rem; opacity:0.6;">~20-40€ en total</span>
+                    </button>
+                    <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>{b.style.background='rgba(255,255,255,0.06)';b.style.borderColor='rgba(255,255,255,0.15)'}); this.style.background='rgba(239,68,68,0.25)'; this.style.borderColor='rgba(239,68,68,0.6)'; document.getElementById('presup-sel').value='alto';"
+                        style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:9px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
+                        🔴 Alto<br><span style="font-size:0.72rem; opacity:0.6;">Sin límite</span>
+                    </button>
+                </div>
                 <input type="hidden" id="clima-sel" value="">
+                <input type="hidden" id="presup-sel" value="medio">
             `;
             
             const { isConfirmed } = await Swal.fire({
@@ -2293,15 +2311,22 @@
                 preConfirm: () => {
                     const val = document.getElementById('clima-sel')?.value;
                     climaSeleccionado = val || (weatherDesc ? weatherDesc : 'tiempo normal');
+                    presupuestoSeleccionado = document.getElementById('presup-sel')?.value || 'medio';
                     return true;
                 }
             });
             
             if (!isConfirmed) return;
             
-            // Texto legible del clima para el prompt
+            // Texto legible del clima y presupuesto para el prompt
             const climaTexto = opcionesClima[climaSeleccionado] 
                 || (weatherDesc ? weatherDesc : 'tiempo agradable');
+            const presupTexto = presupuestoSeleccionado === 'bajo'
+                ? 'PRESUPUESTO BAJO: prioriza actividades gratuitas o de muy bajo coste (parques, zonas peatonales, mercados, playas), máximo 10€ por persona en total'
+                : presupuestoSeleccionado === 'alto'
+                ? 'PRESUPUESTO ALTO: puedes incluir entradas, restaurantes, talleres de pago o experiencias premium'
+                : 'PRESUPUESTO MEDIO: mezcla actividades gratuitas con algún pago puntual (una entrada de museo, una merienda), máximo 20-40€ en total';
+
             
             // 3. Mostrar loading y llamar a la IA
             const hoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -2318,7 +2343,7 @@
                 'mercados, escapadas y compras divertidas'
             ];
             const tematica = tematicas[Math.floor(Math.random() * tematicas.length)];
-            const prompt = `Actúa como un experto planificador familiar local y práctico. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años. REGLAS IMPORTANTES: (1) Todo el plan debe estar concentrado en UNA SOLA ZONA de Barcelona o alrededores (máximo 20km del centro); (2) Los desplazamientos entre actividades deben ser cortos, máximo 10-15 minutos andando o en metro; (3) Adapta al clima: si llueve, interior; si sol, al aire libre; (4) IMPORTANTE: para cada lugar o restaurante que menciones, añade al final del punto el enlace de Google Maps usando este formato exacto: [Ver en Maps](https://www.google.com/maps/search/NOMBRE+DEL+LUGAR+Barcelona). Propón lugares CONCRETOS y conocidos. Incluye una sugerencia para comer/merendar. Formato lista con emojis y horarios. Sin introducción.`;
+            const prompt = `Actúa como un experto planificador familiar local y práctico. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años. REGLAS IMPORTANTES: (1) Todo el plan debe estar concentrado en UNA SOLA ZONA de Barcelona o alrededores (máximo 20km del centro); (2) Los desplazamientos entre actividades deben ser cortos, máximo 10-15 minutos andando o en metro; (3) Adapta al clima: si llueve, interior; si sol, al aire libre; (4) ${presupTexto}; (5) IMPORTANTE: para cada lugar o restaurante que menciones, añade al final del punto el enlace de Google Maps usando este formato exacto: [Ver en Maps](https://www.google.com/maps/search/NOMBRE+DEL+LUGAR+Barcelona). Propón lugares CONCRETOS y conocidos. Incluye una sugerencia para comer/merendar. Formato lista con emojis y horarios. Sin introducción.`;
 
             Swal.fire({
                 title: '⏳ Generando plan...',
