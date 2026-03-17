@@ -8,7 +8,7 @@
   ║    <link rel="stylesheet" href="assets/styles.css?v=X.X">       ║
   ║    <script src="assets/app.js?v=X.X" defer></script>            ║
   ║                                                                  ║
-  ║  Versión actual: v=3.4                                           ║
+  ║  Versión actual: v=3.5                                           ║
   ║  → Incrementar a v=3.5 en el próximo cambio de assets           ║
   ║                                                                  ║
   ║  Si no se hace, el navegador carga la versión antigua (caché)   ║
@@ -25,8 +25,8 @@
     <title>Gastos Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=3.4">
-    <script src="assets/app.js?v=3.4" defer></script>
+    <link rel="stylesheet" href="assets/styles.css?v=3.5">
+    <script src="assets/app.js?v=3.5" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
@@ -646,6 +646,20 @@
                             <span class="form__label">Descripción (opcional)</span>
                             <input type="text" id="cal-event-desc" class="form__input" placeholder="Notas adicionales">
                         </label>
+
+                        <!-- Recordatorio (oculto para Extraescolares) -->
+                        <div id="cal-event-reminder-row" class="form__field" style="margin-top:14px;">
+                            <span class="form__label">🔔 Avisarme</span>
+                            <select id="cal-event-reminder" class="form__input">
+                                <option value="">Sin alarma</option>
+                                <option value="0">A la hora exacta</option>
+                                <option value="10">10 minutos antes</option>
+                                <option value="30">30 minutos antes</option>
+                                <option value="60">1 hora antes</option>
+                                <option value="120">2 horas antes</option>
+                                <option value="1440">1 día antes</option>
+                            </select>
+                        </div>
 
                         <!-- Sección Repetir -->
                         <div class="gcal-repeat-section" style="margin-top:14px;">

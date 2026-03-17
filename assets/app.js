@@ -1196,6 +1196,9 @@
         editingEventId = editEv ? editEv.id : null;
         editingEventSource = editEv ? (editEv.isLocal ? 'local' : 'gcal') : null;
 
+        const reminderRow = document.getElementById('cal-event-reminder-row');
+        if (reminderRow) reminderRow.style.display = type === 'evento' ? 'none' : '';
+
         if (type === 'evento') {
             $modalTitle.textContent = 'Extraescolares';
             $modalIcon.textContent = '📅';
@@ -1219,6 +1222,12 @@
                 document.getElementById('cal-event-time-start').value = start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
                 document.getElementById('cal-event-time-end').value = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
                 if ($timeRow) $timeRow.style.display = editEv.allDay ? 'none' : 'grid';
+
+                const reminderSel = document.getElementById('cal-event-reminder');
+                if (reminderSel) {
+                    reminderSel.value = (editEv.reminderMinutes != null) ? String(editEv.reminderMinutes) : '';
+                }
+
                 $modalTitle.textContent = 'Editar Extraescolar';
             }
         } else if (type === 'tarea') {
@@ -1301,7 +1310,8 @@
             allDay: false,
             start: `${date}T${tStart}:00`,
             end: `${date}T${tEnd}:00`,
-            colorId: null // Morado/Lavanda (Default)
+            colorId: null, // Morado/Lavanda (Default)
+            reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
         };
 
         try {
@@ -1752,9 +1762,10 @@
                 const endStr = ev.allDay ? '' : formatEventTime(ev.end);
                 const timeStr = ev.allDay ? 'Todo el día' : `${startStr} - ${endStr}`;
                 const colorCls = ev.color ? ` gcal-event--color-${ev.color}` : '';
+                const bellIcon = (ev.reminderMinutes != null) ? ' 🔔' : '';
                 return `<div class="gcal-day-event-item${colorCls}">
                     <span style="flex:1;">
-                        <strong style="font-size:0.82rem;">${escapeHtml(ev.title)}</strong>
+                        <strong style="font-size:0.82rem;">${escapeHtml(ev.title)}${bellIcon}</strong>
                         ${formatLocationHtml(ev.location)}
                         <span style="color:var(--text-muted);font-size:0.75rem;display:block;margin-top:2px;">${timeStr}</span>
                     </span>
