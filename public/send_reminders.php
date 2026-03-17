@@ -12,7 +12,7 @@
 
 // Protección: si viene por HTTP, exigir el secret
 if (PHP_SAPI !== 'cli') {
-    $config = require __DIR__ . '/config.php';
+    $config = require __DIR__ . '/../config.php';
     $expected = $config['webhook_secret'] ?? '';
     $provided = $_GET['secret'] ?? '';
     if ($expected === '' || $provided !== $expected) {
@@ -21,13 +21,13 @@ if (PHP_SAPI !== 'cli') {
     }
 }
 
-$remindersFile = __DIR__ . '/storage/reminders.json';
+$remindersFile = __DIR__ . '/../storage/reminders.json';
 
 if (!file_exists($remindersFile)) {
     exit(0);
 }
 
-$config = require __DIR__ . '/config.php';
+$config = require __DIR__ . '/../config.php';
 
 $telegramToken  = $config['telegram_token']  ?? '';
 $telegramChatId = $config['telegram_chat_id'] ?? '';

@@ -701,7 +701,8 @@ class ApiController
                     $event = $this->getCalendarRepository()->createEvent($calId, $input);
 
                     // Guardar recordatorio en reminders.json si tiene alarma
-                    if (isset($event['reminderMinutes']) && $event['reminderMinutes'] !== null && !empty($event['start'])) {
+                    // NOTA: usamos array_key_exists para que reminderMinutes=0 (hora exacta) también funcione
+                    if (array_key_exists('reminderMinutes', $event) && $event['reminderMinutes'] !== null && !empty($event['start'])) {
                         $this->saveReminder($event['id'], $event['title'], $event['start'], (int)$event['reminderMinutes']);
                     }
 
@@ -732,8 +733,10 @@ class ApiController
                         $msg = "<b>{$typeName}</b>\n\n";
                         $msg .= "<b>Evento:</b> {$summary}\n";
                         $msg .= "<b>Fecha:</b> {$date}\n";
-                        if (!empty($event['reminderMinutes'])) {
-                            $msg .= "<b>⏰ Alarma:</b> {$event['reminderMinutes']} min antes\n";
+                        if (array_key_exists('reminderMinutes', $event) && $event['reminderMinutes'] !== null) {
+                            $rm = (int)$event['reminderMinutes'];
+                            $alarmLabel = $rm === 0 ? 'A la hora exacta' : "{$rm} min antes";
+                            $msg .= "<b>⏰ Alarma:</b> {$alarmLabel}\n";
                         }
                         if (!empty($input['description'])) {
                             $msg .= "\n<i>{$input['description']}</i>";
@@ -755,8 +758,9 @@ class ApiController
                     $event = $this->getCalendarRepository()->updateEvent($calId, $eventId, $input);
 
                     // Actualizar recordatorio en reminders.json
+                    // NOTA: array_key_exists para que reminderMinutes=0 (hora exacta) también funcione
                     if (array_key_exists('reminderMinutes', $input)) {
-                        if (isset($event['reminderMinutes']) && $event['reminderMinutes'] !== null && !empty($event['start'])) {
+                        if (array_key_exists('reminderMinutes', $event) && $event['reminderMinutes'] !== null && !empty($event['start'])) {
                             $this->saveReminder($event['id'], $event['title'], $event['start'], (int)$event['reminderMinutes']);
                         } else {
                             $this->deleteReminder($eventId);
