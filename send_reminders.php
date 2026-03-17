@@ -2,13 +2,24 @@
 /**
  * send_reminders.php
  * 
- * Cron job script: ejecutar cada minuto.
- * Lee storage/reminders.json y manda un aviso por Telegram si
- * la hora de disparo (fireAt) está dentro del minuto actual.
+ * Puede ejecutarse como:
+ *   - Cron CLI:  php /ruta/send_reminders.php (en public/)
  * 
- * Cron entry (Hostinger):
- *   * * * * * php /home/u968396048/domains/gastos.luismasabogal.es/public_html/send_reminders.php
+ * URL pública: https://contenido.creawebes.com/GastosNaia/send_reminders.php?secret=naia_secret_2026
+ * EasyCron llama a esta URL cada minuto.
+ * URL del panel de EasyCron: https://www.easycron.com/cron-jobs
  */
+
+// Protección: si viene por HTTP, exigir el secret
+if (PHP_SAPI !== 'cli') {
+    $config = require __DIR__ . '/config.php';
+    $expected = $config['webhook_secret'] ?? '';
+    $provided = $_GET['secret'] ?? '';
+    if ($expected === '' || $provided !== $expected) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+}
 
 $remindersFile = __DIR__ . '/storage/reminders.json';
 
@@ -39,8 +50,8 @@ foreach ($reminders as &$reminder) {
     // Disparar si la hora de aviso es "ahora" (dentro del minuto actual)
     $diffSeconds = $now->getTimestamp() - $fireAt->getTimestamp();
 
-    // Margen: entre 0 y 59 segundos de retraso (sin reenviar si ya pasó más de 1 min)
-    if ($diffSeconds >= 0 && $diffSeconds < 60) {
+    // Margen: entre 0 y 119 segundos de retraso (2 minutos para cubrir retrasos de EasyCron)
+    if ($diffSeconds >= 0 && $diffSeconds < 120) {
         $title           = $reminder['title'] ?? 'Evento';
         $reminderMinutes = $reminder['reminderMinutes'] ?? '';
         $startIso        = $reminder['startIso'] ?? '';

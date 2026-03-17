@@ -96,3 +96,28 @@ ssh -p 65002 USER@HOST
 # Ver archivos desplegados
 ls /home/USER/domains/contenido.creawebes.com/public_html/GastosNaia/
 ```
+
+---
+
+## 🔔 Cron Job de Recordatorios — EasyCron
+
+Los recordatorios de eventos se gestionan mediante un cron job externo en **EasyCron**.
+
+- **Web (Panel de Control)**: https://www.easycron.com/cron-jobs
+- **Cuenta**: martinpallante@gmail.com
+- **Nombre del job**: `Naia Reminders`
+- **URL que llama cada minuto**:
+```
+https://contenido.creawebes.com/GastosNaia/send_reminders.php?secret=naia_secret_2026
+```
+- **Expresión Cron**: `* * * * *` (cada minuto)
+- **Zona horaria**: Europa/Madrid
+
+### ¿Cómo funciona?
+1. Al crear un evento con alarma en la app → se guarda en `storage/reminders.json` en el servidor.
+2. EasyCron llama a la URL cada minuto.
+3. El script comprueba si algún evento tiene que dispararse ahora → manda aviso por Telegram.
+
+### Si el cron deja de funcionar:
+- Entrar en easycron.com y verificar que el job está **Activado**.
+- Comprobar el log de ejecuciones en EasyCron para ver si hay errores.

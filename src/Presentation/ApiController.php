@@ -611,8 +611,26 @@ class ApiController
                     if (!empty($calId)) {
                         $events = $this->getCalendarRepository()->getEvents($calId, $year, $month);
                     }
+                    // Añadir reminderMinutes a cada evento que tenga recordatorio en reminders.json
+                    $remindersFile = __DIR__ . '/../../storage/reminders.json';
+                    if (file_exists($remindersFile)) {
+                        $reminders = json_decode(file_get_contents($remindersFile), true) ?? [];
+                        $reminderMap = [];
+                        foreach ($reminders as $r) {
+                            if (!empty($r['eventId'])) {
+                                $reminderMap[$r['eventId']] = $r['reminderMinutes'] ?? null;
+                            }
+                        }
+                        foreach ($events as &$ev) {
+                            if (isset($reminderMap[$ev['id']])) {
+                                $ev['reminderMinutes'] = $reminderMap[$ev['id']];
+                            }
+                        }
+                        unset($ev);
+                    }
                     $this->jsonResponse(['events' => $events, 'year' => $year, 'month' => $month]);
                     break;
+
 
                 case 'calendar_create_batch':
                     $this->requirePost();
@@ -683,7 +701,7 @@ class ApiController
                     $event = $this->getCalendarRepository()->createEvent($calId, $input);
 
                     // Guardar recordatorio en reminders.json si tiene alarma
-                    if (!empty($event['reminderMinutes']) && !empty($event['start'])) {
+                    if (isset($event['reminderMinutes']) && $event['reminderMinutes'] !== null && !empty($event['start'])) {
                         $this->saveReminder($event['id'], $event['title'], $event['start'], (int)$event['reminderMinutes']);
                     }
 
@@ -738,7 +756,7 @@ class ApiController
 
                     // Actualizar recordatorio en reminders.json
                     if (array_key_exists('reminderMinutes', $input)) {
-                        if (!empty($event['reminderMinutes']) && !empty($event['start'])) {
+                        if (isset($event['reminderMinutes']) && $event['reminderMinutes'] !== null && !empty($event['start'])) {
                             $this->saveReminder($event['id'], $event['title'], $event['start'], (int)$event['reminderMinutes']);
                         } else {
                             $this->deleteReminder($eventId);
