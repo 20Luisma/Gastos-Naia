@@ -202,6 +202,91 @@ class ApiController
                     ]);
                     break;
 
+                case 'send_email':
+                    $this->requirePost();
+                    $type = $_POST['type'] ?? 'new';
+                    $toField = $_POST['to'] ?? '';
+                    $subject = $_POST['subject'] ?? '';
+                    $body = $_POST['body'] ?? '';
+                    $replyToId = $_POST['reply_to_id'] ?? '';
+                    
+                    if (empty($subject) || empty($body)) {
+                        throw new \Exception('Asunto y mensaje son obligatorios.');
+                    }
+                    if (empty(trim($toField))) {
+                        throw new \Exception('Debe especificar al menos un destinatario.');
+                    }
+
+                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                    try {
+                        // Configuraciones del servidor
+                        $mail->isSMTP();
+                        $mail->Host       = 'smtp.gmail.com';
+                        $mail->SMTPAuth   = true;
+                        $mail->Username   = $_ENV['IMAP_USER']; // Usar misma cuenta de lectura para el envío
+                        $mail->Password   = $_ENV['IMAP_PASS']; // Contraseña de aplicación
+                        $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                        $mail->Port       = 587;
+                        
+                        // Configuración de codificación UTF-8
+                        $mail->CharSet = 'UTF-8';
+                        $mail->Encoding = 'base64';
+
+                        // Remitente y Destinatarios
+                        $mail->setFrom($_ENV['IMAP_USER'], 'Universo Naia');
+                        
+                        $destinatarios = explode(',', $toField);
+                        foreach ($destinatarios as $dest) {
+                            $dest = trim($dest);
+                            if (filter_var($dest, FILTER_VALIDATE_EMAIL)) {
+                                $mail->addAddress($dest);
+                            }
+                        }
+
+                        // Adjuntos
+                        if (!empty($_FILES['attachments']['name'][0])) {
+                            $fileCount = count($_FILES['attachments']['name']);
+                            for ($i = 0; $i < $fileCount; $i++) {
+                                $err = $_FILES['attachments']['error'][$i];
+                                $name = $_FILES['attachments']['name'][$i];
+                                
+                                if ($err === UPLOAD_ERR_OK) {
+                                    $tmpName = $_FILES['attachments']['tmp_name'][$i];
+                                    $mail->addAttachment($tmpName, $name);
+                                } else {
+                                    $errorMessages = [
+                                        UPLOAD_ERR_INI_SIZE   => "El archivo '$name' excede el tamaño máximo permitido por el servidor (típicamente 2MB). Redúcelo o envíalos en partes.",
+                                        UPLOAD_ERR_FORM_SIZE  => "El archivo '$name' excede el tamaño de formulario permitido.",
+                                        UPLOAD_ERR_PARTIAL    => "El archivo '$name' se subió parcialmente.",
+                                        UPLOAD_ERR_NO_FILE    => "No se detectó ningún archivo real al subir '$name'.",
+                                    ];
+                                    $msg = $errorMessages[$err] ?? "Error desconocido ($err) al subir '$name'.";
+                                    throw new \Exception("Error adjunto: " . $msg);
+                                }
+                            }
+                        }
+
+                        // Contenido
+                        $mail->isHTML(false); // Envío en texto plano (puedes cambiarlo a true si envías HTML)
+                        
+                        // Añadir cabeceras para entrelazar historial exacto en Gmail ("Hilo de Conversación")
+                        if (!empty($replyToId)) {
+                            // Asegurar formato de corchetes
+                            $formattedReplyId = strpos($replyToId, '<') === false ? "<{$replyToId}>" : $replyToId;
+                            $mail->addCustomHeader('In-Reply-To', $formattedReplyId);
+                            $mail->addCustomHeader('References', $formattedReplyId);
+                        }
+
+                        $mail->Subject = $subject;
+                        $mail->Body    = $body;
+
+                        $mail->send();
+                        $this->jsonResponse(['success' => true]);
+                    } catch (\Exception $e) {
+                        throw new \Exception("El mensaje no pudo ser enviado. Error de Mailer: {$mail->ErrorInfo}");
+                    }
+                    break;
+
                 case 'clear_cache':
                     $this->requirePost();
                     $input = $this->getJsonInput();
@@ -414,22 +499,46 @@ class ApiController
                         $this->jsonResponse(['emails' => []]);
                         break;
                     }
-                    $url = "{$dbUrl}/emails.json?auth={$secret}&orderBy=\"date\"&limitToLast=50";
+                    $url = "{$dbUrl}/emails.json?auth={$secret}";
                     $raw = @file_get_contents($url);
                     if ($raw === false || $raw === 'null') {
                         $this->jsonResponse(['emails' => []]);
                         break;
                     }
                     $emailsMap = json_decode($raw, true) ?? [];
-                    // Firebase returns object keyed by push-ID; convert to array sorted desc
-                    $emails = array_values($emailsMap);
+                    $emails = [];
+                    foreach ($emailsMap as $id => $email) {
+                        if (is_array($email)) {
+                            $email['id'] = $id;
+                            $emails[] = $email;
+                        }
+                    }
                     usort($emails, fn($a, $b) => strcmp($b['date'] ?? '', $a['date'] ?? ''));
                     $this->jsonResponse(['emails' => $emails]);
                     break;
 
+                case 'mark_email_read':
+                    $this->requirePost();
+                    $input = $this->getJsonInput();
+                    $emailId = $input['id'] ?? '';
+                    if (empty($emailId)) {
+                        throw new \Exception('Se requiere ID del correo.');
+                    }
+                    $dbUrl = rtrim($_ENV['FIREBASE_DATABASE_URL'] ?? getenv('FIREBASE_DATABASE_URL') ?? '', '/');
+                    $secret = $_ENV['FIREBASE_SECRET'] ?? getenv('FIREBASE_SECRET') ?? '';
+                    $url = "{$dbUrl}/emails/{$emailId}/isRead.json?auth={$secret}";
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $url);
+                    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(true));
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_exec($ch);
+                    curl_close($ch);
+                    $this->jsonResponse(['success' => true]);
+                    break;
+
                 case 'syncCorreos':
-                    // Placeholder: will trigger cron or manual IMAP sync in a future step
-                    $this->jsonResponse(['success' => true, 'message' => 'Sync manual aún no implementado. El cron lo hace automáticamente cada 10 min.']);
+                    $this->jsonResponse(['success' => true, 'message' => 'Sync manual aún no implementado.']);
                     break;
 
                 case 'scan_receipt':

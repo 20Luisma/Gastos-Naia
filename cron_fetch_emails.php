@@ -1,18 +1,19 @@
 <?php
-/**
- * ╔══════════════════════════════════════════════════════════╗
- * ║  cron_fetch_emails.php — Sincronizador de correos       ║
- * ║  Cron: * /10 * * * * php /path/to/app/cron_fetch_emails.php  ║
- * ║                                                          ║
- * ║  Lee correos NO LEÍDOS del remitente configurado,        ║
- * ║  sube adjuntos a Google Drive y guarda el resultado      ║
- * ║  en Firebase Realtime Database bajo /emails.             ║
- * ╚══════════════════════════════════════════════════════════╝
- */
+// ╔══════════════════════════════════════════════════════════╗
+// ║  cron_fetch_emails.php — Sincronizador de correos        ║
+// ║  Cron: */10 * * * * php /path/to/app/cron_fetch_emails.php ║
+// ║                                                          ║
+// ║  Lee correos NO LEÍDOS del remitente configurado,        ║
+// ║  sube adjuntos a Google Drive y guarda el resultado      ║
+// ║  en Firebase Realtime Database bajo /emails.             ║
+// ╚══════════════════════════════════════════════════════════╝
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+use Webklex\PHPIMAP\ClientManager;
+use Webklex\PHPIMAP\Exceptions\ConnectionFailedException;
 
 // ── Cargar variables de entorno ──────────────────────────────────────────────
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -44,34 +45,75 @@ if (empty($firebaseUrl) || empty($firebaseSecret)) {
     echo "[" . date('Y-m-d H:i:s') . "] ERROR: Faltan FIREBASE_DATABASE_URL o FIREBASE_SECRET en .env\n";
     exit(1);
 }
-if (!extension_loaded('imap')) {
-    echo "[" . date('Y-m-d H:i:s') . "] ERROR: La extensión PHP 'ext-imap' no está instalada en este servidor.\n";
-    exit(1);
-}
 
 echo "[" . date('Y-m-d H:i:s') . "] Iniciando sincronización de correos...\n";
 
-// ── Conectar a IMAP ──────────────────────────────────────────────────────────
-$mailbox = sprintf('{%s:%d/imap/ssl}INBOX', $imapHost, $imapPort);
-$imap = @imap_open($mailbox, $imapUser, $imapPass, 0, 1);
-if (!$imap) {
-    echo "[" . date('Y-m-d H:i:s') . "] ERROR: No se pudo conectar al servidor IMAP. " . imap_last_error() . "\n";
+// ── Conectar a IMAP usando Webklex PHP-IMAP ──────────────────────────────────
+$cm = new ClientManager();
+$client = $cm->make([
+    'host'          => $imapHost,
+    'port'          => $imapPort,
+    'encryption'    => 'ssl',
+    'validate_cert' => true,
+    'username'      => $imapUser,
+    'password'      => $imapPass,
+    'protocol'      => 'imap'
+]);
+
+try {
+    $client->connect();
+} catch (ConnectionFailedException $ex) {
+    echo "[" . date('Y-m-d H:i:s') . "] ERROR: No se pudo conectar al servidor IMAP. " . $ex->getMessage() . "\n";
     exit(1);
 }
 
 echo "[" . date('Y-m-d H:i:s') . "] Conectado. Buscando correos de: {$targetSender}\n";
 
-// ── Buscar correos no leídos del remitente objetivo ──────────────────────────
-$searchCriteria = sprintf('UNSEEN FROM "%s"', $targetSender);
-$emailIds = imap_search($imap, $searchCriteria);
+// ── Obtener INBOX (Recibidos) ──────────────────────────────
+$inboxFolder = $client->getFolder('INBOX');
+$threeMonthsAgo = date('d.m.Y', strtotime('-3 months'));
+$inboxQuery = $inboxFolder->query()->from($targetSender)->since($threeMonthsAgo);
 
-if ($emailIds === false || count($emailIds) === 0) {
-    echo "[" . date('Y-m-d H:i:s') . "] No hay correos nuevos.\n";
-    imap_close($imap);
+$forceAll = in_array('--all', $argv ?? []);
+
+// 1. Inbox (Recibidos de Irene)
+$inboxMsgs = $forceAll 
+    ? clone $inboxQuery->all()->setFetchOrderDesc()->limit(50)->get()
+    : clone $inboxQuery->unseen()->setFetchOrderDesc()->get();
+
+$allMessages = [];
+foreach ($inboxMsgs as $msg) {
+    if ($msg) $allMessages[] = ['msg' => $msg, 'direction' => 'in'];
+}
+
+// 2. Enviados (Propios hacia Irene)
+try {
+    $sentFolder = $client->getFolder('[Gmail]/Enviados');
+    if ($sentFolder) {
+        $sentQuery = clone $sentFolder->query()->to($targetSender)->since($threeMonthsAgo);
+        $sentMsgs = $sentQuery->all()->setFetchOrderDesc()->limit(50)->get();
+        foreach ($sentMsgs as $msg) {
+            if ($msg) $allMessages[] = ['msg' => $msg, 'direction' => 'out'];
+        }
+    }
+} catch (\Exception $e) {
+    echo "[" . date('Y-m-d H:i:s') . "] Aviso: No se pudo leer la carpeta de Enviados. " . $e->getMessage() . "\n";
+}
+
+if (empty($allMessages)) {
+    echo "[" . date('Y-m-d H:i:s') . "] No hay correos nuevos en INBOX ni enviados.\n";
+    $client->disconnect();
     exit(0);
 }
 
-echo "[" . date('Y-m-d H:i:s') . "] Encontrados " . count($emailIds) . " correo(s) nuevo(s).\n";
+// Ordenar todos cronológicamente (más recientes primero)
+usort($allMessages, function($a, $b) {
+    $dateA = strtotime((string) $a['msg']->getDate() ?: 'now');
+    $dateB = strtotime((string) $b['msg']->getDate() ?: 'now');
+    return $dateB <=> $dateA;
+});
+
+echo "[" . date('Y-m-d H:i:s') . "] Procesando " . count($allMessages) . " correo(s) en total (Entrada + Salida).\n";
 
 // ── Inicializar cliente Google Drive ─────────────────────────────────────────
 $driveClient = null;
@@ -89,152 +131,138 @@ if (file_exists($credPath)) {
 $comunicadosDriveFolder = $config['comunicados_drive_folder_id'] ?? '';
 
 // ── Procesar cada correo ──────────────────────────────────────────────────────
-foreach ($emailIds as $emailId) {
-    $header  = imap_headerinfo($imap, $emailId);
-    $subject = isset($header->subject) ? imap_utf8($header->subject) : '(Sin asunto)';
-    $date    = isset($header->date) ? date('Y-m-d H:i:s', strtotime($header->date)) : date('Y-m-d H:i:s');
-    $from    = isset($header->from[0]->mailbox, $header->from[0]->host)
-                ? $header->from[0]->mailbox . '@' . $header->from[0]->host
-                : $targetSender;
+foreach ($allMessages as $item) {
+    $message = $item['msg'];
+    $direction = $item['direction'];
 
-    echo "  → Procesando: \"{$subject}\" ({$date})\n";
+    $subject = mb_decode_mimeheader((string) $message->getSubject()) ?: '(Sin asunto)';
+    $dateStr = (string) $message->getDate();
+    $date    = $dateStr ? date('Y-m-d H:i:s', strtotime($dateStr)) : date('Y-m-d H:i:s');
+    $from    = (string) $message->getFrom()[0]->mail ?? ($direction === 'out' ? $_ENV['IMAP_USER'] : $targetSender);
+
+    echo "  → Procesando [{$direction}]: \"{$subject}\" ({$date})\n";
 
     // ── Extraer cuerpo del mensaje ────────────────────────────────────────────
-    $body       = '';
-    $attachments = [];
-    $structure  = imap_fetchstructure($imap, $emailId);
-
-    if (isset($structure->parts) && count($structure->parts) > 0) {
-        // Multipart message — iterate parts
-        foreach ($structure->parts as $partNum => $part) {
-            $sectionNum = (string)($partNum + 1);
-
-            // Texto plano del cuerpo
-            if ($part->type === TYPETEXT && strtolower($part->subtype) === 'plain' && empty($part->disposition)) {
-                $rawBody = imap_fetchbody($imap, $emailId, $sectionNum);
-                $encoding = $part->encoding ?? ENCOTHER;
-                $body = decodeImapPart($rawBody, $encoding, $part->parameters ?? []);
-                continue;
-            }
-
-            // Adjunto
-            if (!empty($part->disposition) && strtolower($part->disposition) === 'attachment') {
-                $filename = getAttachmentFilename($part);
-                if ($filename) {
-                    $rawData = imap_fetchbody($imap, $emailId, $sectionNum);
-                    $fileData = decodeImapPart($rawData, $part->encoding ?? ENCOTHER, []);
-                    $localTmp = sys_get_temp_dir() . '/' . uniqid('email_attach_') . '_' . basename($filename);
-                    file_put_contents($localTmp, $fileData);
-
-                    // Subir a Google Drive si está configurado
-                    $driveUrl = '';
-                    if ($driveService && !empty($comunicadosDriveFolder)) {
-                        try {
-                            $driveUrl = uploadToDrive($driveService, $localTmp, $filename, $comunicadosDriveFolder);
-                            echo "      ✓ Adjunto subido a Drive: {$filename}\n";
-                        } catch (\Exception $e) {
-                            echo "      ✗ Error subiendo adjunto {$filename}: " . $e->getMessage() . "\n";
-                        }
-                    }
-                    @unlink($localTmp);
-
-                    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                    $attachments[] = [
-                        'filename' => $filename,
-                        'type'     => $ext ?: 'unknown',
-                        'url'      => $driveUrl,
-                    ];
-                }
-            }
-        }
-    } else {
-        // Single-part message
-        $rawBody = imap_body($imap, $emailId);
-        $body    = decodeImapPart($rawBody, $structure->encoding ?? ENCOTHER, $structure->parameters ?? []);
+    $body = '';
+    if ($message->hasTextBody()) {
+        $body = $message->getTextBody();
+    } elseif ($message->hasHTMLBody()) {
+        $body = strip_tags($message->getHTMLBody());
     }
-
+    
     // Truncar cuerpo en 4000 chars para Firebase (límite práctico)
     $body = mb_substr(trim($body), 0, 4000);
 
+    $attachments = [];
+    
+    // getAttachments() solo devuelve Content-Disposition: attachment.
+    // Usamos getParts() para capturar también los adjuntos "inline" (como PDFs embebidos).
+    $allParts = $message->getAttachments();
+    
+    // Si no hay adjuntos estándar, intentar a través de las partes raw
+    if ($allParts->isEmpty() && method_exists($message, 'getPart')) {
+        // Fallback: si hay partes de tipo application/* o image/* con nombre → tratarlas como adjuntos
+        $allParts = collect($message->getParts())->filter(function($part) {
+            $name = (string)($part->name ?? '');
+            $type = strtolower((string)($part->type ?? ''));
+            return !empty($name) && in_array($type, ['application', 'image']);
+        });
+    }
+    
+    foreach ($allParts as $attachment) {
+        $filename = mb_decode_mimeheader((string) $attachment->name);
+        if (empty($filename)) continue; // Saltar partes sin nombre
+        
+        $content = $attachment->getContent();
+        if (empty($content)) continue;
+        
+        $localTmp = sys_get_temp_dir() . '/' . uniqid('email_attach_') . '_' . basename($filename);
+        
+        file_put_contents($localTmp, $content);
+        
+        // Extraer y transformar el original localTemporal al público permanente
+        $safeName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $filename);
+        $finalName = uniqid() . '_' . $safeName;
+        $publicPath = __DIR__ . '/public/archivos_correos/' . $finalName;
+        
+        rename($localTmp, $publicPath);
+        $driveUrl = 'archivos_correos/' . $finalName;
+        echo "      ✓ Adjunto desempaquetado y subido localmente: {$safeName}\n";
+        
+        @unlink($localTmp);
+
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $attachments[] = [
+            'filename' => $filename,
+            'type'     => $ext ?: 'unknown',
+            'url'      => $driveUrl,
+        ];
+    }
+
     // ── Guardar en Firebase ───────────────────────────────────────────────────
+    $rawMessageId = (string) ($message->getMessageId() ?: uniqid('msg_'));
+    $msgIdForHeader = strpos($rawMessageId, '<') === false ? "<{$rawMessageId}>" : $rawMessageId;
+    
     $emailData = [
+        'id'          => $msgIdForHeader, // Guardar el ID con formato corchetes para el In-Reply-To
         'subject'     => $subject,
         'from'        => $from,
+        'to'          => ($direction === 'out' ? $targetSender : $_ENV['IMAP_USER']),
+        'direction'   => $direction,
         'date'        => $date,
+        'timestamp'   => strtotime($date),
         'body'        => $body,
         'attachments' => $attachments,
-        'synced_at'   => date('Y-m-d H:i:s'),
+        'isRead'      => ($direction === 'out') ? true : false, // Los propios nacen leídos
     ];
 
     $saved = saveToFirebase($firebaseUrl, $firebaseSecret, $emailData);
     if ($saved) {
         echo "      ✓ Guardado en Firebase.\n";
-        // Marcar como leído en la bandeja
-        imap_setflag_full($imap, (string)$emailId, '\\Seen');
+        // Marcar como leído en IMAP
+        $message->setFlag(['Seen']);
+
+        // ── Notificación Telegram (solo correos entrantes de Irene) ──────────
+        if ($direction === 'in') {
+            $telegramToken  = $config['telegram_token']  ?? '';
+            $telegramChatId = $config['telegram_chat_id'] ?? '';
+
+            if (!empty($telegramToken) && !empty($telegramChatId)) {
+                $attNames = array_map(fn($a) => $a['filename'], $attachments);
+                $attText  = !empty($attNames) ? "\n📎 *Adjuntos:* " . implode(', ', $attNames) : '';
+                $msgText  = "📬 *Nuevo correo de Irene*\n"
+                          . "📌 *Asunto:* " . $subject . "\n"
+                          . "🗓 *Fecha:* {$date}"
+                          . $attText;
+
+                $tgUrl  = "https://api.telegram.org/bot{$telegramToken}/sendMessage";
+                $tgData = json_encode([
+                    'chat_id'    => $telegramChatId,
+                    'text'       => $msgText,
+                    'parse_mode' => 'Markdown',
+                ]);
+                $tgOpts = ['http' => [
+                    'method'  => 'POST',
+                    'header'  => "Content-Type: application/json\r\n",
+                    'content' => $tgData,
+                    'timeout' => 5,
+                ]];
+                @file_get_contents($tgUrl, false, stream_context_create($tgOpts));
+                echo "      📱 Notificación Telegram enviada.\n";
+            }
+        }
     } else {
         echo "      ✗ Error al guardar en Firebase.\n";
     }
+
 }
 
-imap_close($imap);
+$client->disconnect();
 echo "[" . date('Y-m-d H:i:s') . "] Sincronización completada.\n";
 
 // ────────────────────────────────────────────────────────────────────────────
 //  Funciones auxiliares
 // ────────────────────────────────────────────────────────────────────────────
-
-function decodeImapPart(string $raw, int $encoding, $params): string
-{
-    // Decodificar según el tipo de codificación del mensaje
-    $decoded = match ($encoding) {
-        ENCBASE64        => base64_decode($raw),
-        ENCQUOTEDPRINTABLE => quoted_printable_decode($raw),
-        default          => $raw,
-    };
-
-    // Detectar el charset para convertir a UTF-8
-    $charset = 'UTF-8';
-    if (is_array($params)) {
-        foreach ($params as $param) {
-            if (strtolower($param->attribute ?? '') === 'charset') {
-                $charset = strtoupper($param->value);
-                break;
-            }
-        }
-    }
-
-    if ($charset !== 'UTF-8' && function_exists('mb_convert_encoding')) {
-        $converted = @mb_convert_encoding($decoded, 'UTF-8', $charset);
-        if ($converted !== false) {
-            return $converted;
-        }
-    }
-
-    return $decoded;
-}
-
-function getAttachmentFilename($part): string
-{
-    // Buscar el nombre del adjunto en los parámetros del MIME
-    $filename = '';
-    if (!empty($part->dparameters)) {
-        foreach ($part->dparameters as $dp) {
-            if (strtolower($dp->attribute) === 'filename') {
-                $filename = imap_utf8($dp->value);
-                break;
-            }
-        }
-    }
-    if (empty($filename) && !empty($part->parameters)) {
-        foreach ($part->parameters as $p) {
-            if (strtolower($p->attribute) === 'name') {
-                $filename = imap_utf8($p->value);
-                break;
-            }
-        }
-    }
-    return $filename;
-}
 
 function uploadToDrive(Google\Service\Drive $drive, string $localPath, string $filename, string $folderId): string
 {
@@ -242,8 +270,13 @@ function uploadToDrive(Google\Service\Drive $drive, string $localPath, string $f
         'name'    => $filename,
         'parents' => [$folderId],
     ]);
+    
+    $mimeType = @mime_content_type($localPath);
+    if (!$mimeType) {
+        $mimeType = 'application/octet-stream';
+    }
+    
     $content  = file_get_contents($localPath);
-    $mimeType = mime_content_type($localPath) ?: 'application/octet-stream';
 
     $file = $drive->files->create($fileMetadata, [
         'data'       => $content,
@@ -258,13 +291,20 @@ function uploadToDrive(Google\Service\Drive $drive, string $localPath, string $f
 
 function saveToFirebase(string $dbUrl, string $secret, array $data): bool
 {
-    // Usa POST para que Firebase genere un ID push automático bajo /emails
-    $url = "{$dbUrl}/emails.json?auth={$secret}";
+    // Usar el Message-ID como clave determinista para evitar duplicados.
+    // Firebase requiere que la clave no tenga caracteres especiales.
+    $rawId = $data['id'] ?? uniqid('msg_');
+    // Quitar <> y caracteres no válidos para clave Firebase (solo letras, números, -, _)
+    $key = preg_replace('/[^a-zA-Z0-9_-]/', '_', trim($rawId, '<>'));
+    $key = substr($key, 0, 128); // Limitar longitud
+
+    // PUT hace upsert: si ya existe el correo con esta clave -> lo sobreescribe (no duplica)
+    $url  = "{$dbUrl}/emails/{$key}.json?auth={$secret}";
     $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
     $opts = [
         'http' => [
-            'method'  => 'POST',
+            'method'  => 'PUT',
             'header'  => "Content-Type: application/json\r\n",
             'content' => $json,
             'timeout' => 10,

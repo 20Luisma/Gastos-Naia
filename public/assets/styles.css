@@ -2154,6 +2154,20 @@ body::before {
     animation: fadeIn 0.25s ease;
 }
 
+.correo-card--in {
+    border-left: 4px solid var(--accent);
+}
+
+.correo-card--out {
+    border-left: 1px solid var(--border);
+    border-right: 4px solid #10b981;
+    background: rgba(16, 185, 129, 0.04);
+}
+
+.correo-card--out .correo-card__dot {
+    display: none; /* No necesitamos punto de 'no leído' para nuestros propios correos enviados */
+}
+
 .correo-card:hover {
     border-color: rgba(124, 58, 237, 0.35);
     box-shadow: 0 4px 20px rgba(124, 58, 237, 0.1);
@@ -2211,4 +2225,135 @@ body::before {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px dashed var(--border);
+}
+
+/* ══════════════════════════════════════════
+   PREMIUM CORREOS HEADER (Badge & Sync)
+   ══════════════════════════════════════════ */
+
+.premium-badge {
+    background: linear-gradient(135deg, #FF3366 0%, #FF9933 100%);
+    color: #ffffff;
+    border-radius: 99px;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    animation: badgePulse 2.5s infinite alternate ease-in-out;
+}
+
+@keyframes badgePulse {
+    0% { box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4); transform: scale(1); }
+    100% { box-shadow: 0 6px 18px rgba(255, 153, 51, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.4); transform: scale(1.05); }
+}
+
+.premium-btn-sync {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(139, 92, 246, 0.5);
+    color: #f3f4f6;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.premium-btn-sync::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transform: skewX(-20deg);
+    transition: all 0.5s ease;
+}
+
+.premium-btn-sync:hover {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.4) 0%, rgba(139, 92, 246, 0.2) 100%);
+    border-color: rgba(167, 139, 250, 0.8);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    color: #fff;
+}
+
+.premium-btn-sync:hover::before {
+    left: 200%;
+}
+
+.premium-btn-sync:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3);
+}
+
+.premium-btn-sync:disabled {
+    opacity: 0.6;
+    cursor: default;
+    transform: none;
+    pointer-events: none;
+}
+
+.premium-sync-icon {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.premium-btn-sync:hover .premium-sync-icon {
+    transform: rotate(180deg) scale(1.1);
+}
+
+.premium-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: premiumSpin 0.8s ease-in-out infinite;
+}
+
+@keyframes premiumSpin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-email-action {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-email-action:hover {
+    background: var(--bg-element);
+    color: var(--text);
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
+}
+
+.premium-btn-send {
+    transition: all 0.3s ease;
+}
+
+.premium-btn-send:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 153, 51, 0.6);
+}
+
+.premium-btn-send:active {
+    transform: translateY(1px);
 }

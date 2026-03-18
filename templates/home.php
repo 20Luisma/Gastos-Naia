@@ -25,8 +25,8 @@
     <title>Universo Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=3.8">
-    <script src="assets/app.js?v=3.8" defer></script>
+    <link rel="stylesheet" href="assets/styles.css?v=4.0">
+    <script src="assets/app_v4.js" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
 </head>
@@ -609,10 +609,14 @@
                     <h2 style="margin:0; font-size:1.5rem; color:var(--text); display:flex; align-items:center; gap:10px;">
                         <span style="font-size:1.8rem;">📬</span> Correos
                     </h2>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span id="correos-badge" style="display:none; background: #ef4444; color: white; border-radius: 99px; padding: 2px 10px; font-size: 0.78rem; font-weight: 700;"></span>
-                        <button id="btn-sync-correos" class="btn btn--primary" style="display:flex; align-items:center; gap:8px;">
-                            <span>🔄</span> Sincronizar
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <span id="correos-badge" class="premium-badge" style="display:none;"></span>
+                        <button id="btn-new-correo" class="btn btn--primary" style="display:flex; align-items:center; gap:8px; border-radius: 99px; padding: 8px 18px;">
+                            <span>✍️</span> Nuevo
+                        </button>
+                        <button id="btn-sync-correos" class="premium-btn-sync">
+                            <svg class="premium-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                            Sincronizar
                         </button>
                     </div>
                 </div>
@@ -645,11 +649,64 @@
                         <div class="correo-card__body" style="display:none;">
                             <p class="correo-card__text"></p>
                             <div class="correo-card__attachments"></div>
+                            
+                            <!-- Botones de Acción -->
+                            <div class="correo-card__actions" style="margin-top: 15px; display: flex; gap: 10px; border-top: 1px dashed var(--border); padding-top: 15px;">
+                                <button class="btn-email-action btn-email-reply" style="display:flex; align-items:center; gap:6px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg> Responder
+                                </button>
+                                <button class="btn-email-action btn-email-forward" style="display:flex; align-items:center; gap:6px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg> Reenviar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </template>
             </section>
 
+
+            <!-- Modal Redactar Correo -->
+            <div id="email-modal-overlay" class="gcal-modal-overlay" style="display:none; z-index: 9999;">
+                <div class="email-modal gcal-modal" id="email-modal">
+                    <div class="gcal-modal__header">
+                        <span id="email-modal-title-icon">✉️</span>
+                        <h3 id="email-modal-title">Nuevo Correo</h3>
+                        <button id="email-modal-close" class="gcal-icon-btn">✕</button>
+                    </div>
+
+                    <form id="email-compose-form" class="form">
+                        <input type="hidden" id="email-compose-type" value="new">
+                        <input type="hidden" id="email-compose-reply-to-id" value="">
+                        
+                        <label class="form__field">
+                            <span class="form__label">Para / Destinatarios (Separados por coma)</span>
+                            <input type="text" id="email-compose-to" class="form__input" value="<?= htmlspecialchars($_ENV['EMAIL_SENDER'] ?? 'ireneriv_1976@hotmail.com') ?>">
+                        </label>
+                        
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Asunto</span>
+                            <input type="text" id="email-compose-subject" class="form__input" placeholder="Asunto del correo" required>
+                        </label>
+                        
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Mensaje</span>
+                            <textarea id="email-compose-body" class="form__input" rows="8" placeholder="Escribe tu mensaje aquí..." required style="resize: vertical; font-family: inherit; line-height: 1.5;"></textarea>
+                        </label>
+                        
+                        <label class="form__field" style="margin-top:10px;">
+                            <span class="form__label">Archivos Adjuntos (opcional)</span>
+                            <input type="file" id="email-compose-attachments" class="form__input" style="padding: 6px;" multiple>
+                        </label>
+
+                        <div class="form__actions" style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+                            <button type="button" id="email-btn-cancel" class="btn btn--ghost">Cancelar</button>
+                            <button type="submit" id="email-btn-send" class="btn premium-btn-send" style="display:flex; align-items:center; gap:8px; border-radius: 99px; padding: 8px 18px; background: linear-gradient(135deg, #FF3366 0%, #FF9933 100%); color: white; font-weight: 700; border: none; box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4);">
+                                <span>🚀</span> Enviar Correo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <!-- Modal Nuevo Evento / Tarea (se muestra como popup centrado) -->
             <div id="gcal-modal-overlay" class="gcal-modal-overlay" style="display:none;">
