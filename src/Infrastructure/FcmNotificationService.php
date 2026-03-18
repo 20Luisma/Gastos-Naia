@@ -74,7 +74,7 @@ class FcmNotificationService
                 'add' => '➕ Gasto añadido',
                 'edit' => '✏️ Gasto modificado',
                 'delete' => '🗑️ Gasto eliminado',
-                'pension' => '💰 Pensión actualizada',
+                'pension' => '💳 Pensión actualizada',
             ];
 
             $title = $titles[$action] ?? '📊 Gastos actualizados';

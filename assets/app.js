@@ -469,7 +469,7 @@
 
             let body = `Hola,\n\n`;
             body += `Este es el resumen de nuestros gastos compartidos del mes de ${m.monthName} ${m.year}:\n\n`;
-            body += `💰 *Gasto Total del mes:* ${formatEuro(total)}\n`;
+            body += `💳 *Gasto Total del mes:* ${formatEuro(total)}\n`;
             body += `👉 *Cantidad a entregar (Mitad):* ${formatEuro(half)}\n\n`;
             body += `--- Desglose de gastos ---\n`;
             body += listText;

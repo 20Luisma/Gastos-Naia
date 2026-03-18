@@ -54,7 +54,7 @@ class AddExpenseUseCase
                     $displayDate = $date; // Fallback al string original si falla
                 }
 
-                $msg = "<b>💰 Nuevo Gasto Naia</b>\n\n";
+                $msg = "<b>💳 Nuevo Gasto Universo Naia</b>\n\n";
                 $msg .= "<b>Concepto:</b> {$description}\n";
                 $msg .= "<b>Importe:</b> " . number_format($amount, 2, ',', '.') . " €\n";
                 $msg .= "<b>Fecha:</b> " . $displayDate;

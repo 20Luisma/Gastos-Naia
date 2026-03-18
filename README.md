@@ -1,4 +1,4 @@
-# 💰 Gastos Naia
+# 🌍 Universo Naia
 
 <div align="center">
 

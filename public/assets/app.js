@@ -469,7 +469,7 @@
 
             let body = `Hola,\n\n`;
             body += `Este es el resumen de nuestros gastos compartidos del mes de ${m.monthName} ${m.year}:\n\n`;
-            body += `💰 *Gasto Total del mes:* ${formatEuro(total)}\n`;
+            body += `💳 *Gasto Total del mes:* ${formatEuro(total)}\n`;
             body += `👉 *Cantidad a entregar (Mitad):* ${formatEuro(half)}\n\n`;
             body += `--- Desglose de gastos ---\n`;
             body += listText;
@@ -2300,7 +2300,7 @@
                             ${v}
                         </button>`).join('')}
                 </div>
-                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.5rem;">💰 Presupuesto para el día</p>
+                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.5rem;">💳 Presupuesto para el día</p>
                 <div style="display:flex; gap:10px; justify-content:center;">
                     <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>{b.style.background='rgba(255,255,255,0.06)';b.style.borderColor='rgba(255,255,255,0.15)'}); this.style.background='rgba(34,197,94,0.25)'; this.style.borderColor='rgba(34,197,94,0.6)'; document.getElementById('presup-sel').value='bajo';"
                         style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:9px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">

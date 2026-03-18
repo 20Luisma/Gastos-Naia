@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="assets/styles.css?v=3.7">
     <script src="assets/app.js?v=3.7" defer></script>
     <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
 </head>
 
 <body>
@@ -51,7 +51,7 @@
     <header class="header">
         <div class="header__inner">
             <div class="header__brand">
-                <span class="header__icon">💰</span>
+                <span class="header__icon">🌍</span>
                 <h1 class="header__title">Universo Naia</h1>
             </div>
             <p class="header__subtitle">Gestión de gastos · Sincronizado con Google Sheets</p>
@@ -61,7 +61,7 @@
                 <!-- Dropdown Gastos -->
                 <div class="nav-dropdown">
                     <button class="nav__btn nav__btn--dropdown" id="btn-gastos-root" data-view="gastos">
-                        <span class="nav__btn-icon">💰</span>
+                        <span class="nav__btn-icon">💳</span>
                         <span>Gastos</span>
                         <span class="nav__dropdown-caret">▼</span>
                     </button>
