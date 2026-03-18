@@ -1,4 +1,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Permitir acceso directo a los scripts cron (no redirigir a public/)
+    RewriteRule ^cron_fetch_emails\.php$ - [L]
+    RewriteRule ^send_reminders\.php$ - [L]
+
+    # Todo lo demás → public/
     RewriteRule ^((?!public).*)$ public/$1 [L,NC]
 </IfModule>
