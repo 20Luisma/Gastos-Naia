@@ -1164,11 +1164,6 @@
         openModal('evento');
     });
 
-    document.getElementById('drop-visita')?.addEventListener('click', () => {
-        $createWrapper.classList.remove('open');
-        openModal('visita');
-    });
-
     document.getElementById('drop-tarea')?.addEventListener('click', () => {
         $createWrapper.classList.remove('open');
         openModal('tarea');
@@ -1190,7 +1185,6 @@
 
     let editingEventId = null; // Guardar ID si estamos editando
     let editingEventSource = null; // 'local' o 'gcal'
-    let repeatEveryNWeeks = 1; // Para Visitas: frecuencia cada N semanas
 
     function openModal(type, day = null, editEv = null) {
         if (!$modalOverlay) return;
@@ -1205,13 +1199,9 @@
         const reminderRow = document.getElementById('cal-event-reminder-row');
         if (reminderRow) reminderRow.style.display = type === 'evento' ? 'none' : '';
 
-        if (type === 'evento' || type === 'visita') {
-            const isVisita = type === 'visita';
-            // Guardamos el tipo actual en el form para usarlo en el submit
-            $formEvento.dataset.currentType = type;
-
-            $modalTitle.textContent = isVisita ? 'Citas / Visitas de Naia' : 'Extraescolares';
-            $modalIcon.textContent = isVisita ? '🟠' : '📅';
+        if (type === 'evento') {
+            $modalTitle.textContent = 'Extraescolares';
+            $modalIcon.textContent = '📅';
             $formEvento.style.display = 'block';
             if (day) {
                 const y = calYear;
@@ -1238,7 +1228,7 @@
                     reminderSel.value = (editEv.reminderMinutes != null) ? String(editEv.reminderMinutes) : '';
                 }
 
-                $modalTitle.textContent = isVisita ? 'Editar Visita' : 'Editar Extraescolar';
+                $modalTitle.textContent = 'Editar Extraescolar';
             }
         } else if (type === 'tarea') {
             $modalTitle.textContent = 'Notas importantes';
@@ -1261,9 +1251,9 @@
                 document.getElementById('modal-task-time-end').value = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
                 if ($taskTimeRow) $taskTimeRow.style.display = editEv.allDay ? 'none' : 'grid';
 
-                const reminderTaskSel = document.getElementById('modal-task-reminder');
-                if (reminderTaskSel) {
-                    reminderTaskSel.value = (editEv.reminderMinutes != null) ? String(editEv.reminderMinutes) : '';
+                const reminderSel = document.getElementById('modal-task-reminder');
+                if (reminderSel) {
+                    reminderSel.value = (editEv.reminderMinutes != null) ? String(editEv.reminderMinutes) : '';
                 }
 
                 $modalTitle.textContent = 'Editar Nota';
@@ -1279,19 +1269,6 @@
                 document.getElementById('cita-date').value = `${y}-${m}-${d}`;
             }
         }
-
-        // Mostrar/ocultar selector de frecuencia según tipo
-        const $freqContainer = document.getElementById('cal-frecuencia-container');
-        const $wdLabel = document.getElementById('cal-wd-label');
-        if ($freqContainer) {
-            const showFreq = (type === 'visita');
-            $freqContainer.style.display = showFreq ? 'block' : 'none';
-            if ($wdLabel) $wdLabel.textContent = showFreq ? 'DÍA DE LA SEMANA:' : 'DÍAS DE LA SEMANA:';
-        }
-        // Resetear frecuencia al abrir el modal
-        repeatEveryNWeeks = 1;
-        const $freqLabel = document.getElementById('cal-freq-label');
-        if ($freqLabel) $freqLabel.textContent = 'Cada semana';
 
         $modalOverlay.style.display = 'flex';
     }
@@ -1387,7 +1364,7 @@
         const until = $repeatUntil?.value;
         const start = document.getElementById('cal-event-start')?.value;
         if (!checked.length || !until || !start) { $repeatPreview.textContent = ''; return; }
-        const count = getRecurringDates(start, until, checked, repeatEveryNWeeks).length;
+        const count = getRecurringDates(start, until, checked).length;
         $repeatPreview.textContent = `Se crearán ${count} eventos`;
     }
 
@@ -1398,46 +1375,19 @@
 
     $repeatUntil?.addEventListener('change', updateRepeatPreview);
     document.querySelectorAll('#cal-repeat-options .gcal-wd-btn input').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-            // Si es modo Visita, funciona como radio: solo un día seleccionado
-            const currentType = $formEvento?.dataset.currentType || 'evento';
-            if (currentType === 'visita') {
-                document.querySelectorAll('#cal-repeat-options .gcal-wd-btn input').forEach(other => {
-                    if (other !== e.target) other.checked = false;
-                });
-            }
-            updateRepeatPreview();
-        });
+        cb.addEventListener('change', updateRepeatPreview);
     });
 
-    // Botones de frecuencia
-    document.getElementById('btn-freq-minus')?.addEventListener('click', () => {
-        if (repeatEveryNWeeks > 1) repeatEveryNWeeks--;
-        const lbl = document.getElementById('cal-freq-label');
-        if (lbl) lbl.textContent = repeatEveryNWeeks === 1 ? 'Cada semana' : `Cada ${repeatEveryNWeeks} semanas`;
-        updateRepeatPreview();
-    });
-    document.getElementById('btn-freq-plus')?.addEventListener('click', () => {
-        if (repeatEveryNWeeks < 8) repeatEveryNWeeks++;
-        const lbl = document.getElementById('cal-freq-label');
-        if (lbl) lbl.textContent = repeatEveryNWeeks === 1 ? 'Cada semana' : `Cada ${repeatEveryNWeeks} semanas`;
-        updateRepeatPreview();
-    });
-
-    // Genera lista de fechas (YYYY-MM-DD) recurrentes con soporte a cada N semanas
-    function getRecurringDates(startDate, untilDate, weekdays, nWeeks = 1) {
+    // Genera lista de fechas (YYYY-MM-DD) recurrentes
+    function getRecurringDates(startDate, untilDate, weekdays) {
         const dates = [];
         const start = new Date(startDate + 'T12:00:00');
         const until = new Date(untilDate + 'T23:59:59');
         const cur = new Date(start);
-        const n = nWeeks < 1 ? 1 : nWeeks;
+        // Ajustamos al inicio de la semana de la fecha de inicio
         while (cur <= until) {
             if (weekdays.includes(cur.getDay())) {
-                // Calcula semanas transcurridas desde el inicio
-                const weeksElapsed = Math.round((cur - start) / (7 * 24 * 60 * 60 * 1000));
-                if (weeksElapsed % n === 0) {
-                    dates.push(cur.toISOString().slice(0, 10));
-                }
+                dates.push(cur.toISOString().slice(0, 10));
             }
             cur.setDate(cur.getDate() + 1);
         }
@@ -1488,11 +1438,8 @@
         const untilDate = $repeatUntil?.value;
         const location = document.getElementById('cal-event-location').value.trim();
 
-        const currentType = $formEvento.dataset.currentType || 'evento';
-        const isVisita = currentType === 'visita';
-
         if (isRepeat && weekdays.length > 0 && untilDate) {
-            const dates = getRecurringDates(startDate, untilDate, weekdays, isVisita ? repeatEveryNWeeks : 1);
+            const dates = getRecurringDates(startDate, untilDate, weekdays);
             if (dates.length === 0) {
                 $result.className = 'form__result form__result--error';
                 $result.textContent = '❌ No hay fechas que coincidan con esos criterios.';
@@ -1502,16 +1449,7 @@
 
             const newEvents = [];
             for (let d of dates) {
-                newEvents.push(isVisita ? {
-                    title: title,
-                    description: desc,
-                    location: location,
-                    allDay: allDay,
-                    start: allDay ? d : `${d}T${tStart}:00`,
-                    end: allDay ? d : `${d}T${tEnd}:00`,
-                    colorId: "6", // Amarillo Google Calendar
-                    reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
-                } : {
+                newEvents.push({
                     title: title,
                     description: desc,
                     location: location,
@@ -1523,53 +1461,36 @@
                     type: 'extraescolar'
                 });
             }
-
-            if (isVisita) {
-                await apiPost('calendar_create_batch', newEvents);
-            } else {
-                await saveExtraEventBatch(newEvents);
-            }
+            await saveExtraEventBatch(newEvents);
 
             $formEvento.reset();
             if ($repeatOptions) $repeatOptions.style.display = 'none';
             closeModal();
-            showToast(`✓ ${dates.length} ${isVisita ? 'visitas creadas' : 'eventos creados'}`);
+            showToast(`✓ ${dates.length} eventos locales creados`);
             await loadCalendarEvents();
             return;
         }
 
-        const payload = isVisita ? {
-            title, description: desc, location, allDay,
-            start: allDay ? startDate : startVal,
-            end: allDay ? (endDate || startDate) : endVal,
-            colorId: "6",
-            reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
-        } : {
-            title, description: desc, location, allDay,
-            start: allDay ? startDate : startVal,
-            end: allDay ? (endDate || startDate) : endVal,
-            color: "10", isLocal: true, type: 'extraescolar'
-        };
-
-        if (editingEventId) {
-            if (isVisita && editingEventSource === 'gcal') {
-                payload.eventId = editingEventId;
-                await apiPost('calendar_update', payload);
-                showToast('Visita actualizada ✓');
-            } else if (!isVisita && editingEventSource === 'local') {
-                payload.id = editingEventId;
-                await saveExtraEvent(payload);
-                showToast('Extraescolar actualizado ✓');
-            }
+        if (editingEventId && editingEventSource === 'local') {
+            const updatedItem = {
+                id: editingEventId,
+                title, description: desc, location, allDay,
+                start: allDay ? startDate : startVal,
+                end: allDay ? (endDate || startDate) : endVal,
+                color: "10", isLocal: true, type: 'extraescolar'
+            };
+            await saveExtraEvent(updatedItem);
+            showToast('Extraescolar actualizado ✓');
         } else {
             // Crear nuevo
-            if (isVisita) {
-                await apiPost('calendar_create', payload);
-                showToast('Visita guardada ✓');
-            } else {
-                await saveExtraEvent(payload);
-                showToast('Extraescolar guardado ✓');
-            }
+            const item = {
+                title, description: desc, location, allDay,
+                start: allDay ? startDate : startVal,
+                end: allDay ? (endDate || startDate) : endVal,
+                color: "10", isLocal: true, type: 'extraescolar'
+            };
+            await saveExtraEvent(item);
+            showToast('Extraescolar guardado ✓');
         }
 
         $formEvento.reset();
@@ -1957,11 +1878,11 @@
 
         const dayEvents = calEvents.filter(ev => {
             const d = new Date(ev.start);
-            // Comprobamos que sea el día seleccionado Y que el colorId sea "11" (Rojo) o "6" (Amarillo)
+            // Comprobamos que sea el día seleccionado Y que el colorId sea "11" (Rojo)
             return d.getFullYear() === calYear &&
                 d.getMonth() + 1 === calMonth &&
                 d.getDate() === day &&
-                (ev.color === "11" || ev.color === "6");
+                ev.color === "11";
         });
 
         if (dayEvents.length === 0) {
@@ -1972,7 +1893,7 @@
 
         if (empty) empty.style.display = 'none';
         list.innerHTML = dayEvents.map(ev => `
-            <div class="gcal-day-event-item gcal-event--color-${ev.color}" style="margin-bottom:8px; padding:10px; display:block;">
+            <div class="gcal-day-event-item gcal-event--color-11" style="margin-bottom:8px; padding:10px; display:block;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <strong style="font-size:0.85rem; color:#fff;">${escapeHtml(ev.title)}</strong>
                     <div style="display:flex; gap:8px;">
@@ -2073,17 +1994,28 @@
                 const timeStr = d.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
 
                 let fileAttachmentHtml = '';
-                if (item.fileUrl) {
-                    const icon = fileIcon(item.fileType?.toLowerCase() || 'pdf');
-                    fileAttachmentHtml = `
-                        <div style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display:inline-flex; align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.1);">
-                            <span style="font-size:1.5rem;">${icon}</span>
-                            <div style="display:flex; flex-direction:column; max-width:200px;">
-                                <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.fileName || 'Documento adjunto')}</span>
-                                <a href="${item.fileUrl}" target="_blank" style="font-size:0.75rem; color: var(--accent); text-decoration:none;">🔗 Ver adjunto</a>
+                const allAttachments = [];
+                if (item.fileUrl && (!item.attachments || item.attachments.length === 0)) {
+                    allAttachments.push({ url: item.fileUrl, name: item.fileName, type: item.fileType });
+                } else if (item.attachments && item.attachments.length > 0) {
+                    allAttachments.push(...item.attachments);
+                }
+
+                if (allAttachments.length > 0) {
+                    fileAttachmentHtml += '<div style="display:flex; flex-wrap:wrap; gap:10px;">';
+                    allAttachments.forEach(att => {
+                        const icon = fileIcon(att.type?.toLowerCase() || 'pdf');
+                        fileAttachmentHtml += `
+                            <div style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display:inline-flex; align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.1);">
+                                <span style="font-size:1.5rem;">${icon}</span>
+                                <div style="display:flex; flex-direction:column; max-width:200px;">
+                                    <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(att.name || 'Documento adjunto')}</span>
+                                    <a href="${att.url}" target="_blank" style="font-size:0.75rem; color: var(--accent); text-decoration:none;">🔗 Ver adjunto</a>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    });
+                    fileAttachmentHtml += '</div>';
                 }
 
                 html += `
@@ -2198,24 +2130,37 @@
             let fileUrl = existingItem ? existingItem.fileUrl : null;
             let fileName = existingItem ? existingItem.fileName : null;
             let fileType = existingItem ? existingItem.fileType : null;
+            let attachments = existingItem && existingItem.attachments ? [...existingItem.attachments] : [];
 
             try {
                 // 1. Si hay un archivo nuevo, lo subimos
                 if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    fileName = file.name;
-                    fileType = file.name.split('.').pop();
-
                     uploadProgress.style.display = 'block';
 
-                    const formData = new FormData();
-                    formData.append('file', file);
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        const file = fileInput.files[i];
+                        const formData = new FormData();
+                        formData.append('file', file);
 
-                    const res = await fetch('?action=uploadComunicado', { method: 'POST', body: formData });
-                    const json = await res.json();
+                        const res = await fetch('?action=uploadComunicado', { method: 'POST', body: formData });
+                        const json = await res.json();
 
-                    if (json.error) throw new Error(json.error);
-                    fileUrl = json.url;
+                        if (json.error) throw new Error(json.error);
+                        
+                        const newAtt = {
+                            url: json.url,
+                            name: file.name,
+                            type: file.name.split('.').pop()
+                        };
+                        attachments.push(newAtt);
+                        
+                        // Main fallback for compatibility
+                        if (!fileUrl) {
+                            fileUrl = newAtt.url;
+                            fileName = newAtt.name;
+                            fileType = newAtt.type;
+                        }
+                    }
                 }
 
                 // 2. Guardamos todo en Firebase
@@ -2228,7 +2173,8 @@
                     description: desc,
                     fileUrl: fileUrl,
                     fileName: fileName,
-                    fileType: fileType
+                    fileType: fileType,
+                    attachments: attachments.length > 0 ? attachments : null
                 });
 
                 showToast(id ? 'Resumen actualizado correctamente' : '¡Nota guardada con éxito!');
@@ -2241,199 +2187,6 @@
             } finally {
                 btnSave.disabled = false;
                 btnSave.style.opacity = '1';
-            }
-        });
-    }
-
-    // ── Botón IA "Sugerir plan para hoy" en Calendario ──────────────────────
-    const btnIaPlan = document.getElementById('btn-ia-plan');
-    if (btnIaPlan) {
-        btnIaPlan.addEventListener('click', async () => {
-            
-            // 1. Intentar obtener el tiempo real en Barcelona via wttr.in
-            let weatherDesc = null;
-            let weatherEmoji = '🌤️';
-            try {
-                const wRes = await fetch('https://wttr.in/Barcelona?format=j1', { signal: AbortSignal.timeout(5000) });
-                if (wRes.ok) {
-                    const wData = await wRes.json();
-                    const current = wData.current_condition?.[0];
-                    if (current) {
-                        const tempC = current.temp_C;
-                        const desc = current.lang_es?.[0]?.value || current.weatherDesc?.[0]?.value || '';
-                        const code = parseInt(current.weatherCode);
-                        // Asignar emoji según código de tiempo
-                        if ([113].includes(code))               weatherEmoji = '☀️';
-                        else if ([116, 119].includes(code))      weatherEmoji = '⛅';
-                        else if ([122, 143, 248].includes(code)) weatherEmoji = '☁️';
-                        else if ([176,263,266,281,284,293,296,299,302,305,308,311,314,317,320,323,326,329,332,335,338,350,353,356,359,362,365,368,371,374,377].includes(code)) weatherEmoji = '🌧️';
-                        else if ([389,392,395].includes(code))   weatherEmoji = '⛈️';
-                        weatherDesc = `${weatherEmoji} ${desc}, ${tempC}°C`;
-                    }
-                }
-            } catch (_) { /* Si falla la API de tiempo, continuamos sin él */ }
-            
-            // 2. Mostrar opciones: clima detectado o manual
-            const opcionesClima = {
-                'sol': '☀️ Soleado / Buen tiempo',
-                'nublado': '⛅ Nublado / Fresco',
-                'lluvia': '🌧️ Lluvia / Mal tiempo',
-                'calor': '🌡️ Mucho calor',
-                'frio': '❄️ Frío intenso',
-            };
-            
-            let climaSeleccionado;
-            let presupuestoSeleccionado = 'medio';
-            
-            const detectMsg = weatherDesc
-                ? `<p style="color:rgba(255,255,255,0.7); margin-bottom:1rem;">Tiempo detectado en Barcelona: <b style="color:#fff">${weatherDesc}</b></p>`
-                : `<p style="color:rgba(255,255,255,0.6); margin-bottom:1rem; font-size:0.85rem;">No se pudo detectar el tiempo automáticamente.</p>`;
-
-            const selectHtml = `
-                ${detectMsg}
-                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.5rem;">¿Con qué tiempo quieres planear?</p>
-                <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:1.2rem;">
-                    ${Object.entries(opcionesClima).map(([k, v]) => `
-                        <button onclick="this.closest('.swal2-popup').querySelectorAll('.clima-btn').forEach(b=>b.style.background='rgba(255,255,255,0.06)'); this.style.background='rgba(139,92,246,0.35)'; document.getElementById('clima-sel').value='${k}';" 
-                            class="clima-btn"
-                            style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:7px 11px; cursor:pointer; font-size:0.83rem; transition:all 0.15s;">
-                            ${v}
-                        </button>`).join('')}
-                </div>
-                <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:0.5rem;">💳 Presupuesto para el día</p>
-                <div style="display:flex; gap:10px; justify-content:center;">
-                    <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>{b.style.background='rgba(255,255,255,0.06)';b.style.borderColor='rgba(255,255,255,0.15)'}); this.style.background='rgba(34,197,94,0.25)'; this.style.borderColor='rgba(34,197,94,0.6)'; document.getElementById('presup-sel').value='bajo';"
-                        style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:9px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
-                        💚 Bajo<br><span style="font-size:0.72rem; opacity:0.6;">Gratuito o casi</span>
-                    </button>
-                    <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>{b.style.background='rgba(255,255,255,0.06)';b.style.borderColor='rgba(255,255,255,0.15)'}); this.style.background='rgba(234,179,8,0.25)'; this.style.borderColor='rgba(234,179,8,0.6)'; document.getElementById('presup-sel').value='medio';"
-                        style="flex:1; background:rgba(234,179,8,0.25); border:1px solid rgba(234,179,8,0.6); border-radius:8px; color:#fff; padding:9px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
-                        🟡 Medio<br><span style="font-size:0.72rem; opacity:0.6;">~20-40€ en total</span>
-                    </button>
-                    <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>{b.style.background='rgba(255,255,255,0.06)';b.style.borderColor='rgba(255,255,255,0.15)'}); this.style.background='rgba(239,68,68,0.25)'; this.style.borderColor='rgba(239,68,68,0.6)'; document.getElementById('presup-sel').value='alto';"
-                        style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; padding:9px; cursor:pointer; font-size:0.88rem; transition:all 0.15s;">
-                        🔴 Alto<br><span style="font-size:0.72rem; opacity:0.6;">Sin límite</span>
-                    </button>
-                </div>
-                <input type="hidden" id="clima-sel" value="">
-                <input type="hidden" id="presup-sel" value="medio">
-            `;
-            
-            const { isConfirmed } = await Swal.fire({
-                title: '✨ Plan para hoy',
-                html: selectHtml,
-                background: '#1a1a2e',
-                color: '#fff',
-                confirmButtonText: 'Generar plan →',
-                confirmButtonColor: '#8B5CF6',
-                showCancelButton: true,
-                cancelButtonText: 'Cancelar',
-                preConfirm: () => {
-                    const val = document.getElementById('clima-sel')?.value;
-                    const presup = document.getElementById('presup-sel')?.value;
-
-                    // Validar que se haya seleccionado el clima si no se detectó automáticamente
-                    if (!val && !weatherDesc) {
-                        Swal.showValidationMessage(
-                            `<span style="font-size:0.88rem;">☝️ Elige el tiempo que hace hoy y tu presupuesto para continuar</span>`
-                        );
-                        return false;
-                    }
-
-                    climaSeleccionado = val || (weatherDesc ? weatherDesc : 'tiempo normal');
-                    presupuestoSeleccionado = presup || 'medio';
-                    return true;
-                }
-            });
-            
-            if (!isConfirmed) return;
-            
-            // Texto legible del clima y presupuesto para el prompt
-            const climaTexto = opcionesClima[climaSeleccionado] 
-                || (weatherDesc ? weatherDesc : 'tiempo agradable');
-            const presupTexto = presupuestoSeleccionado === 'bajo'
-                ? 'PRESUPUESTO BAJO: prioriza actividades gratuitas o de muy bajo coste (parques, zonas peatonales, mercados, playas), máximo 10€ por persona en total'
-                : presupuestoSeleccionado === 'alto'
-                ? 'PRESUPUESTO ALTO: puedes incluir entradas, restaurantes, talleres de pago o experiencias premium'
-                : 'PRESUPUESTO MEDIO: mezcla actividades gratuitas con algún pago puntual (una entrada de museo, una merienda), máximo 20-40€ en total';
-
-            
-            // 3. Mostrar loading y llamar a la IA
-            const hoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-            const tematicas = [
-                'aventura urbana y exploración de barrios', 
-                'cultura y museos interactivos',
-                'naturaleza y aire libre',
-                'creatividad y manualidades o talleres',
-                'deporte y movimiento',
-                'gastronomía y descubrimiento de comidas',
-                'cine, libros y ocio tranquilo',
-                'tecnología y ciencia',
-                'historia y monumentos de Barcelona',
-                'mercados, escapadas y compras divertidas'
-            ];
-            const tematica = tematicas[Math.floor(Math.random() * tematicas.length)];
-            const prompt = `Actúa como un experto planificador familiar local y práctico. Hoy es ${hoy} en Barcelona. El tiempo que hace es: ${climaTexto}. Diseña un plan ORIGINAL de temática "${tematica}", de 6 horas (aprox 12:00-18:00) para hacer con mi hija Naia de 10 años. REGLAS IMPORTANTES: (1) Todo el plan debe estar concentrado en UNA SOLA ZONA de Barcelona o alrededores (máximo 20km del centro); (2) Los desplazamientos entre actividades deben ser cortos, máximo 10-15 minutos andando o en metro; (3) Adapta al clima: si llueve, interior; si sol, al aire libre; (4) ${presupTexto}; (5) IMPORTANTE: para cada lugar o restaurante que menciones, añade al final del punto el enlace de Google Maps usando este formato exacto: [Ver en Maps](https://www.google.com/maps/search/NOMBRE+DEL+LUGAR+Barcelona). Propón lugares CONCRETOS y conocidos. Incluye una sugerencia para comer/merendar. Formato lista con emojis y horarios. Sin introducción.`;
-
-            Swal.fire({
-                title: '⏳ Generando plan...',
-                html: `<span style="color:rgba(255,255,255,0.6); font-size:0.9rem;">Adaptando el plan al tiempo de hoy en Barcelona...</span>`,
-                allowOutsideClick: false,
-                background: '#1a1a2e',
-                color: '#fff',
-                didOpen: () => { Swal.showLoading(); }
-            });
-
-            try {
-                const res = await fetch('?action=ai_ask', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: prompt })
-                });
-                if (!res.ok) throw new Error('Error de conexión con la IA');
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-
-                const rawPlan = data.answer;
-
-                // Formato HTML para mostrar en pantalla
-                let htmlPlan = rawPlan
-                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                    .replace(/\[Ver en Maps\]\((https?:\/\/[^\)]+)\)/g, '<a href="$1" target="_blank" style="color:#8B5CF6; font-size:0.8rem;">📍 Ver en Maps</a>')
-                    .replace(/\n\n/g, '<br><br>')
-                    .replace(/\n/g, '<br>');
-
-                Swal.fire({
-                    title: `✨ Plan para hoy · ${climaTexto.split(' ').slice(0,2).join(' ')}`,
-                    html: `<div style="text-align:left; font-size:0.93rem; line-height:1.6; color:rgba(255,255,255,0.85); max-height:55vh; overflow-y:auto; padding-right:6px;">${htmlPlan}</div>`,
-                    background: '#1a1a2e',
-                    color: '#fff',
-                    confirmButtonText: '¡Perfecto!',
-                    confirmButtonColor: '#8B5CF6',
-                    showCancelButton: true,
-                    cancelButtonText: '📱 Enviar a Telegram',
-                    cancelButtonColor: '#2563EB',
-                    width: '580px',
-                    reverseButtons: true,
-                }).then(async (result) => {
-                    if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
-                        // Enviar a Telegram
-                        try {
-                            await fetch('?action=telegram_send_plan', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ plan: rawPlan, clima: climaTexto })
-                            });
-                            Swal.fire({ icon: 'success', title: '¡Enviado!', text: 'El plan ya está en tu Telegram 📱', background: '#1a1a2e', color: '#fff', timer: 2000, showConfirmButton: false });
-                        } catch (e) {
-                            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo enviar a Telegram', background: '#1a1a2e', color: '#fff' });
-                        }
-                    }
-                });
-
-
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: '#1a1a2e', color: '#fff' });
             }
         });
     }

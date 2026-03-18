@@ -42,9 +42,18 @@ class DeleteComunicadoUseCase
             throw new \Exception("Error al borrar el comunicado de Firebase.");
         }
 
-        // 3. Borrar archivo local si existe
-        if ($comunicado && !empty($comunicado['fileUrl'])) {
-            $this->deleteLocalFile($comunicado['fileUrl']);
+        // 3. Borrar archivo(s) local(es) si existen
+        if ($comunicado) {
+            if (!empty($comunicado['fileUrl'])) {
+                $this->deleteLocalFile($comunicado['fileUrl']);
+            }
+            if (!empty($comunicado['attachments']) && is_array($comunicado['attachments'])) {
+                foreach ($comunicado['attachments'] as $att) {
+                    if (!empty($att['url'])) {
+                        $this->deleteLocalFile($att['url']);
+                    }
+                }
+            }
         }
 
         return true;

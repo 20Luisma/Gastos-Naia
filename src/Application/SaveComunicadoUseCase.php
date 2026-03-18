@@ -20,7 +20,7 @@ class SaveComunicadoUseCase
         $this->telegramService = $telegramService;
     }
 
-    public function execute(string $date, string $title, string $description, ?string $fileUrl, ?string $fileType, ?string $fileName, ?string $id = null): string
+    public function execute(string $date, string $title, string $description, ?string $fileUrl, ?string $fileType, ?string $fileName, ?string $id = null, ?array $attachments = null): string
     {
         if (empty($this->databaseUrl) || empty($this->secret)) {
             throw new \Exception("Firebase credentials not configured.");
@@ -41,6 +41,7 @@ class SaveComunicadoUseCase
             'fileUrl' => $fileUrl,
             'fileType' => $fileType,
             'fileName' => $fileName,
+            'attachments' => $attachments,
             'updated_at' => $timestamp
         ];
 

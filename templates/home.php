@@ -841,7 +841,7 @@
                         <label class="form__field" style="margin-top:10px;">
                             <span class="form__label">Archivo adjunto (Receta, PDF notas...)</span>
                             <input type="file" id="comunicado-file" class="form__input" accept="image/*,.pdf"
-                                style="padding:4px;">
+                                style="padding:4px;" multiple>
                         </label>
 
                         <!-- Barra de progreso para subida -->

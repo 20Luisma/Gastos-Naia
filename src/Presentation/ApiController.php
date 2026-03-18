@@ -388,7 +388,8 @@ class ApiController
                         $input['fileUrl'] ?? null,
                         $input['fileType'] ?? null,
                         $input['fileName'] ?? null,
-                        $input['id'] ?? null
+                        $input['id'] ?? null,
+                        $input['attachments'] ?? null
                     );
                     $this->jsonResponse(['success' => true, 'id' => $id]);
                     break;

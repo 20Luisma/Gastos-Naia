@@ -1994,17 +1994,28 @@
                 const timeStr = d.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
 
                 let fileAttachmentHtml = '';
-                if (item.fileUrl) {
-                    const icon = fileIcon(item.fileType?.toLowerCase() || 'pdf');
-                    fileAttachmentHtml = `
-                        <div style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display:inline-flex; align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.1);">
-                            <span style="font-size:1.5rem;">${icon}</span>
-                            <div style="display:flex; flex-direction:column; max-width:200px;">
-                                <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.fileName || 'Documento adjunto')}</span>
-                                <a href="${item.fileUrl}" target="_blank" style="font-size:0.75rem; color: var(--accent); text-decoration:none;">🔗 Ver adjunto</a>
+                const allAttachments = [];
+                if (item.fileUrl && (!item.attachments || item.attachments.length === 0)) {
+                    allAttachments.push({ url: item.fileUrl, name: item.fileName, type: item.fileType });
+                } else if (item.attachments && item.attachments.length > 0) {
+                    allAttachments.push(...item.attachments);
+                }
+
+                if (allAttachments.length > 0) {
+                    fileAttachmentHtml += '<div style="display:flex; flex-wrap:wrap; gap:10px;">';
+                    allAttachments.forEach(att => {
+                        const icon = fileIcon(att.type?.toLowerCase() || 'pdf');
+                        fileAttachmentHtml += `
+                            <div style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; display:inline-flex; align-items:center; gap:10px; border: 1px solid rgba(255,255,255,0.1);">
+                                <span style="font-size:1.5rem;">${icon}</span>
+                                <div style="display:flex; flex-direction:column; max-width:200px;">
+                                    <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(att.name || 'Documento adjunto')}</span>
+                                    <a href="${att.url}" target="_blank" style="font-size:0.75rem; color: var(--accent); text-decoration:none;">🔗 Ver adjunto</a>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    });
+                    fileAttachmentHtml += '</div>';
                 }
 
                 html += `
@@ -2119,24 +2130,37 @@
             let fileUrl = existingItem ? existingItem.fileUrl : null;
             let fileName = existingItem ? existingItem.fileName : null;
             let fileType = existingItem ? existingItem.fileType : null;
+            let attachments = existingItem && existingItem.attachments ? [...existingItem.attachments] : [];
 
             try {
                 // 1. Si hay un archivo nuevo, lo subimos
                 if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    fileName = file.name;
-                    fileType = file.name.split('.').pop();
-
                     uploadProgress.style.display = 'block';
 
-                    const formData = new FormData();
-                    formData.append('file', file);
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        const file = fileInput.files[i];
+                        const formData = new FormData();
+                        formData.append('file', file);
 
-                    const res = await fetch('?action=uploadComunicado', { method: 'POST', body: formData });
-                    const json = await res.json();
+                        const res = await fetch('?action=uploadComunicado', { method: 'POST', body: formData });
+                        const json = await res.json();
 
-                    if (json.error) throw new Error(json.error);
-                    fileUrl = json.url;
+                        if (json.error) throw new Error(json.error);
+                        
+                        const newAtt = {
+                            url: json.url,
+                            name: file.name,
+                            type: file.name.split('.').pop()
+                        };
+                        attachments.push(newAtt);
+                        
+                        // Main fallback for compatibility
+                        if (!fileUrl) {
+                            fileUrl = newAtt.url;
+                            fileName = newAtt.name;
+                            fileType = newAtt.type;
+                        }
+                    }
                 }
 
                 // 2. Guardamos todo en Firebase
@@ -2149,7 +2173,8 @@
                     description: desc,
                     fileUrl: fileUrl,
                     fileName: fileName,
-                    fileType: fileType
+                    fileType: fileType,
+                    attachments: attachments.length > 0 ? attachments : null
                 });
 
                 showToast(id ? 'Resumen actualizado correctamente' : '¡Nota guardada con éxito!');
