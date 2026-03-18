@@ -12,6 +12,11 @@
     "require-dev": {
         "phpunit/phpunit": "^10.0"
     },
+    "config": {
+        "platform": {
+            "php": "8.2.30"
+        }
+    },
     "autoload": {
         "psr-4": {
             "GastosNaia\\": "src/"
