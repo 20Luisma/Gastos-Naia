@@ -465,7 +465,7 @@
 
             const half = total / 2;
 
-            const subject = encodeURIComponent(`Resumen de Gastos Gastos Naia - ${m.monthName} ${m.year}`);
+            const subject = encodeURIComponent(`Resumen de Gastos Universo Naia - ${m.monthName} ${m.year}`);
 
             let body = `Hola,\n\n`;
             body += `Este es el resumen de nuestros gastos compartidos del mes de ${m.monthName} ${m.year}:\n\n`;
@@ -473,7 +473,7 @@
             body += `👉 *Cantidad a entregar (Mitad):* ${formatEuro(half)}\n\n`;
             body += `--- Desglose de gastos ---\n`;
             body += listText;
-            body += `\nUn saludo.\n--\nGenerado por Gastos Naia App.`;
+            body += `\nUn saludo.\n--\nGenerado por Universo Naia App.`;
 
             const encodedBody = encodeURIComponent(body);
             // Mejor compatibilidad móvil para mailto creando un enlace clickeable temporalmente
@@ -1250,6 +1250,12 @@
                 document.getElementById('modal-task-time-start').value = start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
                 document.getElementById('modal-task-time-end').value = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
                 if ($taskTimeRow) $taskTimeRow.style.display = editEv.allDay ? 'none' : 'grid';
+
+                const reminderSel = document.getElementById('modal-task-reminder');
+                if (reminderSel) {
+                    reminderSel.value = (editEv.reminderMinutes != null) ? String(editEv.reminderMinutes) : '';
+                }
+
                 $modalTitle.textContent = 'Editar Nota';
             }
         } else if (type === 'cita') {
@@ -1311,7 +1317,7 @@
             start: `${date}T${tStart}:00`,
             end: `${date}T${tEnd}:00`,
             colorId: null, // Morado/Lavanda (Default)
-            reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
+            reminderMinutes: document.getElementById('cita-reminder')?.value !== '' ? parseInt(document.getElementById('cita-reminder').value) : null
         };
 
         try {
@@ -1519,7 +1525,8 @@
                 allDay: allDay,
                 start: allDay ? date : `${date}T${tStart}:00`,
                 end: allDay ? date : `${date}T${tEnd}:00`,
-                colorId: "11"
+                colorId: "11",
+                reminderMinutes: document.getElementById('modal-task-reminder')?.value !== '' ? parseInt(document.getElementById('modal-task-reminder').value) : null
             };
 
             if (editingEventId && editingEventSource === 'gcal') {

@@ -102,7 +102,7 @@ class AskAiUseCase
         $precalcContext = json_encode($preCalculatedMetrics, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         // 2. System Prompt Corporativo
-        $systemPrompt = "Eres el Asistente Contable IA de la aplicación 'Gastos Naia'.
+        $systemPrompt = "Eres el Asistente Contable IA de la aplicación 'Universo Naia'.
         Contexto: La hija Naia tiene gastos mensuales compartidos al 50% entre sus padres. El padre paga además una pensión alimentaria mensual.
         Tienes acceso completo al HISTORIAL COMPLETO de todos los años y meses disponibles.
         

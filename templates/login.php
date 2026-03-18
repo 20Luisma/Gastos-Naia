@@ -7,7 +7,7 @@ $error = $_GET['error'] ?? '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gastos Naia — Acceso</title>
+    <title>Universo Naia — Acceso</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -196,8 +196,8 @@ $error = $_GET['error'] ?? '';
 
 <body>
     <div class="card">
-        <div class="logo"><img src="assets/appnaia.jpeg" alt="Gastos Naia"></div>
-        <h1>Gastos Naia</h1>
+        <div class="logo"><img src="assets/appnaia.jpeg" alt="Universo Naia"></div>
+        <h1>Universo Naia</h1>
         <p class="subtitle">Introduce tus credenciales para acceder</p>
 
         <?php if ($error === 'invalid'): ?>

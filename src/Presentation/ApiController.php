@@ -342,7 +342,7 @@ class ApiController
                     $monthName = $monthLabels[$month] ?? "Mes $month";
                     
                     // Build the message
-                    $msg = "🧾 <b>Resumen Gastos Naia - {$monthName} {$year}</b>\n\n";
+                    $msg = "🧾 <b>Resumen Universo Naia - {$monthName} {$year}</b>\n\n";
                     $msg .= "<b>Gasto Total:</b> " . number_format($total, 2, ',', '.') . "€\n";
                     $msg .= "<b>Mitad a transferir:</b> " . number_format($half, 2, ',', '.') . "€\n\n";
                     $msg .= "<i>Notificación enviada desde la App</i>";

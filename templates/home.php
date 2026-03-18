@@ -8,8 +8,8 @@
   ║    <link rel="stylesheet" href="assets/styles.css?v=X.X">       ║
   ║    <script src="assets/app.js?v=X.X" defer></script>            ║
   ║                                                                  ║
-  ║  Versión actual: v=3.5                                           ║
-  ║  → Incrementar a v=3.5 en el próximo cambio de assets           ║
+  ║  Versión actual: v=3.7                                           ║
+  ║  → Incrementar a v=3.7 en el próximo cambio de assets           ║
   ║                                                                  ║
   ║  Si no se hace, el navegador carga la versión antigua (caché)   ║
   ║  y los cambios no se verán sin Ctrl+Shift+R.                    ║
@@ -21,12 +21,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Gastos Naia — Gestión y visualización de gastos">
-    <title>Gastos Naia</title>
+    <meta name="description" content="Universo Naia — Gestión y visualización">
+    <title>Universo Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=3.5">
-    <script src="assets/app.js?v=3.5" defer></script>
+    <link rel="stylesheet" href="assets/styles.css?v=3.7">
+    <script src="assets/app.js?v=3.7" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
@@ -52,7 +52,7 @@
         <div class="header__inner">
             <div class="header__brand">
                 <span class="header__icon">💰</span>
-                <h1 class="header__title">Gastos Naia</h1>
+                <h1 class="header__title">Universo Naia</h1>
             </div>
             <p class="header__subtitle">Gestión de gastos · Sincronizado con Google Sheets</p>
 
@@ -748,6 +748,20 @@
                             </label>
                         </div>
 
+                        <!-- Recordatorio Notas -->
+                        <div id="modal-task-reminder-row" class="form__field" style="margin-top:14px;">
+                            <span class="form__label">🔔 Avisarme</span>
+                            <select id="modal-task-reminder" class="form__input">
+                                <option value="">Sin alarma</option>
+                                <option value="0">A la hora exacta</option>
+                                <option value="10">10 minutos antes</option>
+                                <option value="30">30 minutos antes</option>
+                                <option value="60">1 hora antes</option>
+                                <option value="120">2 horas antes</option>
+                                <option value="1440">1 día antes</option>
+                            </select>
+                        </div>
+
                         <div class="form__actions" style="margin-top:1.5rem;">
                             <button type="submit" class="btn btn--primary" id="btn-save-modal-task">📋 Guardar
                                 nota</button>
@@ -780,6 +794,20 @@
                                 <span class="form__label">Hasta</span>
                                 <input type="time" id="cita-time-end" class="form__input" value="12:00">
                             </label>
+                        </div>
+
+                        <!-- Recordatorio Citas -->
+                        <div id="cita-reminder-row" class="form__field" style="margin-top:14px;">
+                            <span class="form__label">🔔 Avisarme</span>
+                            <select id="cita-reminder" class="form__input">
+                                <option value="">Sin alarma</option>
+                                <option value="0">A la hora exacta</option>
+                                <option value="10">10 minutos antes</option>
+                                <option value="30">30 minutos antes</option>
+                                <option value="60">1 hora antes</option>
+                                <option value="120">2 horas antes</option>
+                                <option value="1440">1 día antes</option>
+                            </select>
                         </div>
 
                         <div class="form__actions" style="margin-top:1.5rem;">
@@ -840,7 +868,7 @@
 
         <!-- Footer -->
         <footer class="footer">
-            Gastos Naia · Sincronizado con Google Sheets
+            Universo Naia · Sincronizado con Google Sheets
         </footer>
     </div>
 

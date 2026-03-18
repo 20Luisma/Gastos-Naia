@@ -90,7 +90,7 @@ class HandleTelegramWebhookUseCase
             // Ignorar comandos básicos como /start
             if (strpos($text, '/') === 0) {
                 if ($text === '/start') {
-                    $this->telegramService->sendMessage("¡Hola Luisma! Soy tu asistente para Gastos Naia. Envíame una nota de voz contándome algo sobre ella, y lo guardaré directamente en su Diario.");
+                    $this->telegramService->sendMessage("¡Hola Luisma! Soy tu asistente para Universo Naia. Envíame una nota de voz contándome algo sobre ella, y lo guardaré directamente en su Diario.");
                 }
                 return true;
             }
