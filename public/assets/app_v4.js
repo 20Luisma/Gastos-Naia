@@ -1181,7 +1181,7 @@
 
     document.getElementById('drop-cita')?.addEventListener('click', () => {
         $createWrapper.classList.remove('open');
-        openModal('cita');
+        openModal('cita'); // Usa el modal unificado ahora
     });
     
     document.getElementById('drop-visita')?.addEventListener('click', () => {
@@ -1216,14 +1216,22 @@
         const reminderRow = document.getElementById('cal-event-reminder-row');
         if (reminderRow) reminderRow.style.display = type === 'evento' ? 'none' : '';
 
-        if (type === 'evento' || type === 'visita') {
+        if (type === 'evento' || type === 'visita' || type === 'cita') {
             currentEventoType = type;
-            $modalTitle.textContent = type === 'evento' ? 'Extraescolares' : 'Visitas de Naia';
-            $modalIcon.textContent = type === 'evento' ? '📅' : '🟠';
+            if (type === 'evento') {
+                $modalTitle.textContent = 'Extraescolares';
+                $modalIcon.textContent = '📅';
+            } else if (type === 'visita') {
+                $modalTitle.textContent = 'Visitas de Naia';
+                $modalIcon.textContent = '🟠';
+            } else {
+                $modalTitle.textContent = 'Agenda de citas';
+                $modalIcon.textContent = '🕒';
+            }
             $formEvento.style.display = 'block';
             
             const freqEl = document.getElementById('cal-frecuencia-container');
-            if (freqEl) freqEl.style.display = type === 'visita' ? 'block' : 'none'; // Eventos normales no tienen selección de frecuencia
+            if (freqEl) freqEl.style.display = type === 'visita' ? 'block' : 'none'; // Eventos normales y citas no tienen selección de frecuencia
 
             if (day) {
                 const y = calYear;
@@ -1250,7 +1258,7 @@
                     reminderSel.value = (editEv.reminderMinutes != null) ? String(editEv.reminderMinutes) : '';
                 }
 
-                $modalTitle.textContent = type === 'evento' ? 'Editar Extraescolar' : 'Editar Visita';
+                $modalTitle.textContent = type === 'evento' ? 'Editar Extraescolar' : (type === 'visita' ? 'Editar Visita' : 'Editar Cita');
             }
         } else if (type === 'tarea') {
             $modalTitle.textContent = 'Notas importantes';
@@ -1481,7 +1489,7 @@
                     newEvents.push({
                         title: title, description: desc, location: location, allDay: allDay,
                         start: allDay ? d : `${d}T${tStart}:00`, end: allDay ? d : `${d}T${tEnd}:00`,
-                        colorId: "6", // Color Tomate/Rojo para Visitas
+                        colorId: currentEventoType === 'visita' ? "6" : "3", // Tomate/Rojo para Visitas, Morado para Citas
                         reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
                     });
                 }
@@ -1492,7 +1500,7 @@
                 showToast(`✓ ${dates.length} eventos locales creados`);
             } else {
                 await apiPost('calendar_create_batch', { events: newEvents });
-                showToast(`✓ ${dates.length} visitas creadas`);
+                showToast(`✓ ${dates.length} ${currentEventoType === 'visita' ? 'visitas' : 'citas'} creadas`);
             }
 
             $formEvento.reset();
@@ -1521,20 +1529,21 @@
                 showToast('Extraescolar guardado ✓');
             }
         } else {
-            // Google Calendar (Visitas)
+            // Google Calendar (Visitas y Citas)
             const payload = {
                 title, description: desc, location, allDay,
                 start: allDay ? startDate : startVal, end: allDay ? (endDate || startDate) : endVal,
-                colorId: "6",
+                colorId: currentEventoType === 'visita' ? "6" : "3",
                 reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
             };
+            const labelToast = currentEventoType === 'visita' ? 'Visita' : 'Cita';
             if (editingEventId && editingEventSource === 'gcal') {
                 payload.eventId = editingEventId;
                 await apiPost('calendar_update', payload);
-                showToast('Visita actualizada ✓');
+                showToast(`${labelToast} actualizada ✓`);
             } else {
                 await apiPost('calendar_create', payload);
-                showToast('Visita guardada ✓');
+                showToast(`${labelToast} guardada ✓`);
             }
         }
 
@@ -1834,12 +1843,10 @@
                     if (!ev) return;
                     let type = 'evento';
                     if (ev.color === '11') type = 'tarea';
-                    else if (ev.color === 'default' || !ev.isLocal) {
-                        // Si es GCal y no es rojo, es una cita
-                        type = 'cita';
-                        // Nota: por ahora redirigimos al form de evento general si es edición individual
-                        type = 'evento';
-                    }
+                    else if (ev.color === '6') type = 'visita';
+                    // Si no es ninguno de los anteriores y es gcal/defecto, asume que es cita (incluye color=3)
+                    else if (!ev.isLocal || ev.color === '3' || ev.color === 'default') type = 'cita';
+
                     openModal(type, null, ev);
                 });
             });
