@@ -2410,7 +2410,7 @@
                     });
                 }
 
-                const res = await fetch('api.php?action=send_email', {
+                const res = await fetch('?action=send_email', {
                     method: 'POST',
                     body: formData
                 });
