@@ -7,7 +7,7 @@ composer.lock
 credentials/
 
 # Archivos subidos por el usuario localmente
-uploads/
+public/uploads/
 
 # Archivos basura del sistema operativo
 .DS_Store

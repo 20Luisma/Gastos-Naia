@@ -74,9 +74,9 @@ class ApiController
         $this->setPensionUseCase = new SetPensionUseCase($this->expenseRepository, $firebaseWriteRepo);
 
         $this->getComunicadosUseCase = new \GastosNaia\Application\GetComunicadosUseCase();
-        $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase(__DIR__ . '/../../');
+        $this->uploadComunicadoFileUseCase = new \GastosNaia\Application\UploadComunicadoFileUseCase(__DIR__ . '/../../public');
         $this->saveComunicadoUseCase = new \GastosNaia\Application\SaveComunicadoUseCase($this->telegramService);
-        $this->deleteComunicadoUseCase = new \GastosNaia\Application\DeleteComunicadoUseCase(__DIR__ . '/../../');
+        $this->deleteComunicadoUseCase = new \GastosNaia\Application\DeleteComunicadoUseCase(__DIR__ . '/../../public');
 
         $firebaseReadRepo = new \GastosNaia\Infrastructure\FirebaseReadRepository();
         $this->askAiUseCase = new \GastosNaia\Application\AskAiUseCase($firebaseReadRepo);
