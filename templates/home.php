@@ -25,8 +25,8 @@
     <title>Universo Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=4.0">
-    <script src="assets/app_v4.js" defer></script>
+    <link rel="stylesheet" href="assets/styles.css?v=<?= filemtime(__DIR__ . '/../public/assets/styles.css') ?>">
+    <script src="assets/app_v4.js?v=<?= filemtime(__DIR__ . '/../public/assets/app_v4.js') ?>" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
 </head>
