@@ -1183,6 +1183,11 @@
         $createWrapper.classList.remove('open');
         openModal('cita');
     });
+    
+    document.getElementById('drop-visita')?.addEventListener('click', () => {
+        $createWrapper.classList.remove('open');
+        openModal('visita');
+    });
 
     // ── Modal ─────────────────────────────────────
 
@@ -1195,6 +1200,8 @@
 
     let editingEventId = null; // Guardar ID si estamos editando
     let editingEventSource = null; // 'local' o 'gcal'
+    let currentEventoType = 'evento'; // Guarda si es 'evento' o 'visita' para el submit
+
 
     function openModal(type, day = null, editEv = null) {
         if (!$modalOverlay) return;
@@ -1209,10 +1216,15 @@
         const reminderRow = document.getElementById('cal-event-reminder-row');
         if (reminderRow) reminderRow.style.display = type === 'evento' ? 'none' : '';
 
-        if (type === 'evento') {
-            $modalTitle.textContent = 'Extraescolares';
-            $modalIcon.textContent = '📅';
+        if (type === 'evento' || type === 'visita') {
+            currentEventoType = type;
+            $modalTitle.textContent = type === 'evento' ? 'Extraescolares' : 'Visitas de Naia';
+            $modalIcon.textContent = type === 'evento' ? '📅' : '🟠';
             $formEvento.style.display = 'block';
+            
+            const freqEl = document.getElementById('cal-frecuencia-container');
+            if (freqEl) freqEl.style.display = type === 'visita' ? 'block' : 'none'; // Eventos normales no tienen selección de frecuencia
+
             if (day) {
                 const y = calYear;
                 const m = String(calMonth).padStart(2, '0');
@@ -1238,7 +1250,7 @@
                     reminderSel.value = (editEv.reminderMinutes != null) ? String(editEv.reminderMinutes) : '';
                 }
 
-                $modalTitle.textContent = 'Editar Extraescolar';
+                $modalTitle.textContent = type === 'evento' ? 'Editar Extraescolar' : 'Editar Visita';
             }
         } else if (type === 'tarea') {
             $modalTitle.textContent = 'Notas importantes';
@@ -1459,48 +1471,71 @@
 
             const newEvents = [];
             for (let d of dates) {
-                newEvents.push({
-                    title: title,
-                    description: desc,
-                    location: location,
-                    allDay: allDay,
-                    start: allDay ? d : `${d}T${tStart}:00`,
-                    end: allDay ? d : `${d}T${tEnd}:00`,
-                    color: "10",
-                    isLocal: true,
-                    type: 'extraescolar'
-                });
+                if (currentEventoType === 'evento') {
+                    newEvents.push({
+                        title: title, description: desc, location: location, allDay: allDay,
+                        start: allDay ? d : `${d}T${tStart}:00`, end: allDay ? d : `${d}T${tEnd}:00`,
+                        color: "10", isLocal: true, type: 'extraescolar'
+                    });
+                } else {
+                    newEvents.push({
+                        title: title, description: desc, location: location, allDay: allDay,
+                        start: allDay ? d : `${d}T${tStart}:00`, end: allDay ? d : `${d}T${tEnd}:00`,
+                        colorId: "6", // Color Tomate/Rojo para Visitas
+                        reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
+                    });
+                }
             }
-            await saveExtraEventBatch(newEvents);
+            
+            if (currentEventoType === 'evento') {
+                await saveExtraEventBatch(newEvents);
+                showToast(`✓ ${dates.length} eventos locales creados`);
+            } else {
+                await apiPost('calendar_create_batch', { events: newEvents });
+                showToast(`✓ ${dates.length} visitas creadas`);
+            }
 
             $formEvento.reset();
             if ($repeatOptions) $repeatOptions.style.display = 'none';
             closeModal();
-            showToast(`✓ ${dates.length} eventos locales creados`);
             await loadCalendarEvents();
             return;
         }
 
-        if (editingEventId && editingEventSource === 'local') {
-            const updatedItem = {
-                id: editingEventId,
-                title, description: desc, location, allDay,
-                start: allDay ? startDate : startVal,
-                end: allDay ? (endDate || startDate) : endVal,
-                color: "10", isLocal: true, type: 'extraescolar'
-            };
-            await saveExtraEvent(updatedItem);
-            showToast('Extraescolar actualizado ✓');
+        if (currentEventoType === 'evento') {
+            if (editingEventId && editingEventSource === 'local') {
+                const updatedItem = {
+                    id: editingEventId, title, description: desc, location, allDay,
+                    start: allDay ? startDate : startVal, end: allDay ? (endDate || startDate) : endVal,
+                    color: "10", isLocal: true, type: 'extraescolar'
+                };
+                await saveExtraEvent(updatedItem);
+                showToast('Extraescolar actualizado ✓');
+            } else {
+                const item = {
+                    title, description: desc, location, allDay,
+                    start: allDay ? startDate : startVal, end: allDay ? (endDate || startDate) : endVal,
+                    color: "10", isLocal: true, type: 'extraescolar'
+                };
+                await saveExtraEvent(item);
+                showToast('Extraescolar guardado ✓');
+            }
         } else {
-            // Crear nuevo
-            const item = {
+            // Google Calendar (Visitas)
+            const payload = {
                 title, description: desc, location, allDay,
-                start: allDay ? startDate : startVal,
-                end: allDay ? (endDate || startDate) : endVal,
-                color: "10", isLocal: true, type: 'extraescolar'
+                start: allDay ? startDate : startVal, end: allDay ? (endDate || startDate) : endVal,
+                colorId: "6",
+                reminderMinutes: document.getElementById('cal-event-reminder')?.value !== '' ? parseInt(document.getElementById('cal-event-reminder').value) : null
             };
-            await saveExtraEvent(item);
-            showToast('Extraescolar guardado ✓');
+            if (editingEventId && editingEventSource === 'gcal') {
+                payload.eventId = editingEventId;
+                await apiPost('calendar_update', payload);
+                showToast('Visita actualizada ✓');
+            } else {
+                await apiPost('calendar_create', payload);
+                showToast('Visita guardada ✓');
+            }
         }
 
         $formEvento.reset();
