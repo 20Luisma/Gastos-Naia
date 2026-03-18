@@ -538,7 +538,11 @@ class ApiController
                     break;
 
                 case 'syncCorreos':
-                    $this->jsonResponse(['success' => true, 'message' => 'Sync manual aún no implementado.']);
+                    $script = realpath(__DIR__ . '/../../cron_fetch_emails.php');
+                    if ($script) {
+                        shell_exec("php " . escapeshellarg($script) . " > /dev/null 2>&1");
+                    }
+                    $this->jsonResponse(['success' => true, 'message' => 'Sincronización forzada completada']);
                     break;
 
                 case 'scan_receipt':
