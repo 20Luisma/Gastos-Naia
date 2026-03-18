@@ -1,5 +1,4 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteCond %{REQUEST_URI} !^/GastosNaia/public/
-    RewriteRule ^(.*)$ public/$1 [L]
+    RewriteRule ^((?!public).*)$ public/$1 [L,NC]
 </IfModule>
