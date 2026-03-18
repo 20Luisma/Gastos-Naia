@@ -605,20 +605,18 @@
 
             <!-- ═══ Vista: Correos ═══ -->
             <section id="view-correos" class="view" style="display:none; padding: 20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                <div style="display:flex; justify-content:center; align-items:center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
                     <h2 style="margin:0; font-size:1.5rem; color:var(--text); display:flex; align-items:center; gap:10px;">
                         <span style="font-size:1.8rem;">📬</span> Correos
                     </h2>
-                    <div style="display: flex; align-items: center; gap: 14px;">
-                        <span id="correos-badge" class="premium-badge" style="display:none;"></span>
-                        <button id="btn-new-correo" class="btn btn--primary" style="display:flex; align-items:center; gap:8px; border-radius: 99px; padding: 8px 18px;">
-                            <span>✍️</span> Nuevo
-                        </button>
-                        <button id="btn-sync-correos" class="premium-btn-sync">
-                            <svg class="premium-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
-                            Sincronizar
-                        </button>
-                    </div>
+                    <span id="correos-badge" class="premium-badge" style="display:none;"></span>
+                    <button id="btn-new-correo" class="btn btn--primary" style="display:flex; align-items:center; gap:8px; border-radius: 99px; padding: 8px 18px;">
+                        <span>✍️</span> Nuevo
+                    </button>
+                    <button id="btn-sync-correos" class="premium-btn-sync">
+                        <svg class="premium-sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                        Sincronizar
+                    </button>
                 </div>
 
                 <!-- Estado vacío -->
