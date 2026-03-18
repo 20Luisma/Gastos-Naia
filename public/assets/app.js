@@ -167,7 +167,8 @@
         'nuevo-anio': document.getElementById('section-nuevo-anio'),
         ai: document.getElementById('view-ai'),
         calendario: document.getElementById('view-calendario'),
-        comunicados: document.getElementById('view-comunicados')
+        comunicados: document.getElementById('view-comunicados'),
+        correos: document.getElementById('view-correos')
     };
 
     function switchView(name) {
@@ -205,6 +206,7 @@
         if (name === 'mensual') loadMonthly();
         if (name === 'gastos') loadExpenses();
         if (name === 'comunicados') loadComunicados();
+        if (name === 'correos') loadCorreos();
     }
 
 
@@ -2191,4 +2193,101 @@
         });
     }
 
-})();
+
+    // ──────────────────────────────────────────────
+    //  Vista: Correos
+    // ──────────────────────────────────────────────
+
+    const $correosTimeline = document.getElementById('correos-timeline');
+    const $correosEmpty = document.getElementById('correos-empty');
+    const $btnSyncCorreos = document.getElementById('btn-sync-correos');
+    const $correosBadge = document.getElementById('correos-badge');
+
+    let correosLoaded = false;
+
+    async function loadCorreos() {
+        if (correosLoaded) return;
+        try {
+            const data = await api('getCorreos');
+            renderCorreos(data.emails || []);
+            correosLoaded = true;
+        } catch (e) {
+            if ($correosTimeline) {
+                $correosTimeline.innerHTML = `<p style="color:var(--danger); text-align:center; padding: 40px;">⚠️ No se pudieron cargar los correos: ${escapeHtml(e.message)}</p>`;
+            }
+        }
+    }
+
+    function renderCorreos(emails) {
+        if (!$correosTimeline) return;
+        $correosTimeline.innerHTML = '';
+
+        if (emails.length === 0) {
+            if ($correosEmpty) $correosEmpty.style.display = 'block';
+            return;
+        }
+
+        if ($correosEmpty) $correosEmpty.style.display = 'none';
+
+        if ($correosBadge) {
+            $correosBadge.textContent = `${emails.length} correos`;
+            $correosBadge.style.display = 'inline-block';
+        }
+
+        emails.forEach(email => {
+            const card = document.createElement('div');
+            card.className = 'correo-card';
+            const attachmentsHtml = email.attachments && email.attachments.length > 0
+                ? `<div class="correo-card__attachments"><p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">📎 Adjuntos:</p>
+                ${email.attachments.map(a => `<a href="${escapeHtml(a.url)}" target="_blank" class="btn btn--sm btn--ghost" style="margin-right:6px; margin-bottom:6px;">${fileIcon(a.type)} ${escapeHtml(a.filename)}</a>`).join('')}</div>`
+                : '';
+
+            card.innerHTML = `
+                <div class="correo-card__header">
+                    <div style="display:flex; align-items:center; gap: 12px; flex:1; min-width:0;">
+                        <span class="correo-card__dot"></span>
+                        <div style="min-width:0;">
+                            <p class="correo-card__subject">${escapeHtml(email.subject || '(Sin asunto)')}</p>
+                            <p class="correo-card__date">${escapeHtml(email.date || '')}</p>
+                        </div>
+                    </div>
+                    <button class="correo-card__toggle btn btn--ghost" style="flex-shrink:0; padding: 4px 12px; font-size: 0.8rem;">Ver</button>
+                </div>
+                <div class="correo-card__body" style="display:none;">
+                    <p class="correo-card__text">${escapeHtml(email.body || '(Sin contenido)')}</p>
+                    ${attachmentsHtml}
+                </div>
+            `;
+
+            const toggleBtn = card.querySelector('.correo-card__toggle');
+            const body = card.querySelector('.correo-card__body');
+            toggleBtn.addEventListener('click', () => {
+                const isOpen = body.style.display !== 'none';
+                body.style.display = isOpen ? 'none' : 'block';
+                toggleBtn.textContent = isOpen ? 'Ver' : 'Cerrar';
+            });
+
+            $correosTimeline.appendChild(card);
+        });
+    }
+
+    if ($btnSyncCorreos) {
+        $btnSyncCorreos.addEventListener('click', async () => {
+            const original = $btnSyncCorreos.innerHTML;
+            $btnSyncCorreos.disabled = true;
+            $btnSyncCorreos.innerHTML = '<span>⏳</span> Sincronizando...';
+            correosLoaded = false;
+            try {
+                await api('syncCorreos');
+                showToast('Correos sincronizados correctamente', 'success');
+                await loadCorreos();
+            } catch (e) {
+                showToast('Error al sincronizar: ' + e.message, 'error');
+            } finally {
+                $btnSyncCorreos.disabled = false;
+                $btnSyncCorreos.innerHTML = original;
+            }
+        });
+    }
+
+}());

@@ -8,8 +8,8 @@
   ║    <link rel="stylesheet" href="assets/styles.css?v=X.X">       ║
   ║    <script src="assets/app.js?v=X.X" defer></script>            ║
   ║                                                                  ║
-  ║  Versión actual: v=3.7                                           ║
-  ║  → Incrementar a v=3.7 en el próximo cambio de assets           ║
+  ║  Versión actual: v=3.8                                           ║
+  ║  → Incrementar a v=3.9 en el próximo cambio de assets           ║
   ║                                                                  ║
   ║  Si no se hace, el navegador carga la versión antigua (caché)   ║
   ║  y los cambios no se verán sin Ctrl+Shift+R.                    ║
@@ -25,8 +25,8 @@
     <title>Universo Naia</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="assets/styles.css?v=3.7">
-    <script src="assets/app.js?v=3.7" defer></script>
+    <link rel="stylesheet" href="assets/styles.css?v=3.8">
+    <script src="assets/app.js?v=3.8" defer></script>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
 </head>
@@ -96,6 +96,12 @@
                 <button class="nav__btn" data-view="comunicados" title="Diario y Comunicados">
                     <span class="nav__btn-icon">📝</span>
                     <span>Diario de Naia</span>
+                </button>
+
+                <!-- Correos -->
+                <button class="nav__btn" data-view="correos" title="Correos de la madre de Naia">
+                    <span class="nav__btn-icon">📬</span>
+                    <span>Correos</span>
                 </button>
 
 
@@ -594,6 +600,54 @@
                     style="max-width: 800px; margin: 0 auto; position:relative;">
                     <!-- Las tarjetas se inyectarán aquí vía JS -->
                 </div>
+            </section>
+
+
+            <!-- ═══ Vista: Correos ═══ -->
+            <section id="view-correos" class="view" style="display:none; padding: 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <h2 style="margin:0; font-size:1.5rem; color:var(--text); display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:1.8rem;">📬</span> Correos
+                    </h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="correos-badge" style="display:none; background: #ef4444; color: white; border-radius: 99px; padding: 2px 10px; font-size: 0.78rem; font-weight: 700;"></span>
+                        <button id="btn-sync-correos" class="btn btn--primary" style="display:flex; align-items:center; gap:8px;">
+                            <span>🔄</span> Sincronizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estado vacío -->
+                <div id="correos-empty" style="text-align:center; padding: 60px 20px; display: none;">
+                    <div style="font-size: 4rem; margin-bottom: 12px;">📭</div>
+                    <p style="color: var(--text-muted); font-size: 1rem;">No hay correos recibidos todavía.</p>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">Cuando llegue un correo de la madre de Naia, aparecerá aquí automáticamente.</p>
+                </div>
+
+                <!-- Timeline de correos -->
+                <div id="correos-timeline" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+                    <!-- Las tarjetas de correo se inyectan aquí vía JS -->
+                </div>
+
+                <!-- Plantilla oculta de una tarjeta de correo (clonada por JS) -->
+                <template id="correo-card-tpl">
+                    <div class="correo-card">
+                        <div class="correo-card__header">
+                            <div style="display:flex; align-items:center; gap: 10px;">
+                                <span class="correo-card__dot"></span>
+                                <div>
+                                    <p class="correo-card__subject"></p>
+                                    <p class="correo-card__date"></p>
+                                </div>
+                            </div>
+                            <button class="correo-card__toggle btn btn--ghost" style="padding: 4px 10px; font-size: 0.8rem;">Ver</button>
+                        </div>
+                        <div class="correo-card__body" style="display:none;">
+                            <p class="correo-card__text"></p>
+                            <div class="correo-card__attachments"></div>
+                        </div>
+                    </div>
+                </template>
             </section>
 
 

@@ -404,6 +404,33 @@ class ApiController
                     $this->jsonResponse(['success' => $success]);
                     break;
 
+                // ── CORREOS ──
+                case 'getCorreos':
+                    // Lee el nodo /emails de Firebase y lo devuelve al frontend
+                    $dbUrl = rtrim($_ENV['FIREBASE_DATABASE_URL'] ?? getenv('FIREBASE_DATABASE_URL') ?? '', '/');
+                    $secret = $_ENV['FIREBASE_SECRET'] ?? getenv('FIREBASE_SECRET') ?? '';
+                    if (empty($dbUrl) || empty($secret)) {
+                        // Firebase not configured: return empty list gracefully
+                        $this->jsonResponse(['emails' => []]);
+                        break;
+                    }
+                    $url = "{$dbUrl}/emails.json?auth={$secret}&orderBy=\"date\"&limitToLast=50";
+                    $raw = @file_get_contents($url);
+                    if ($raw === false || $raw === 'null') {
+                        $this->jsonResponse(['emails' => []]);
+                        break;
+                    }
+                    $emailsMap = json_decode($raw, true) ?? [];
+                    // Firebase returns object keyed by push-ID; convert to array sorted desc
+                    $emails = array_values($emailsMap);
+                    usort($emails, fn($a, $b) => strcmp($b['date'] ?? '', $a['date'] ?? ''));
+                    $this->jsonResponse(['emails' => $emails]);
+                    break;
+
+                case 'syncCorreos':
+                    // Placeholder: will trigger cron or manual IMAP sync in a future step
+                    $this->jsonResponse(['success' => true, 'message' => 'Sync manual aún no implementado. El cron lo hace automáticamente cada 10 min.']);
+                    break;
 
                 case 'scan_receipt':
                     $this->requirePost();
