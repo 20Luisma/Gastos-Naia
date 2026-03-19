@@ -1,8 +1,8 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 // Cargar .env
-$envFile = __DIR__ . '/.env';
+$envFile = dirname(__DIR__) . '/.env';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
@@ -18,12 +18,12 @@ if (file_exists($envFile)) {
     }
 }
 
-$config = require __DIR__ . '/config.php';
+$config = require dirname(__DIR__) . '/config.php';
 
 try {
     echo "1. Iniciando cliente...\n";
     $client = new \Google\Client();
-    $client->setAuthConfig(__DIR__ . '/credentials/service-account.json');
+    $client->setAuthConfig(dirname(__DIR__) . '/credentials/service-account.json');
     $client->setScopes([\Google\Service\Sheets::SPREADSHEETS]);
 
     echo "2. Creando servicio Sheets...\n";

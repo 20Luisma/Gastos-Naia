@@ -121,3 +121,41 @@ https://contenido.creawebes.com/GastosNaia/send_reminders.php?secret=naia_secret
 ### Si el cron deja de funcionar:
 - Entrar en easycron.com y verificar que el job está **Activado**.
 - Comprobar el log de ejecuciones en EasyCron para ver si hay errores.
+
+---
+
+## 📬 Cron Job de Correos — EasyCron
+
+La sincronización de correos de Irene se gestiona también en **EasyCron**.
+
+- **Web (Panel de Control)**: https://www.easycron.com/cron-jobs
+- **Cuenta**: martinpallante@gmail.com
+- **Nombre del job**: `Naia Fetch Emails`
+- **URL que llama cada 10 minutos**:
+```
+https://contenido.creawebes.com/GastosNaia/cron_fetch_emails.php
+```
+- **Expresión Cron**: `*/10 * * * *` (cada 10 minutos)
+- **Zona horaria**: Europa/Madrid
+
+### ¿Cómo funciona?
+1. EasyCron llama a la URL cada 10 minutos.
+2. El script conecta vía IMAP a Gmail y busca correos nuevos de `ireneriv_1976@hotmail.com`.
+3. Descarga adjuntos y los guarda en `public/archivos_correos/`.
+4. Guarda los datos del correo en Firebase bajo `/emails`.
+5. Envía una notificación Telegram con el asunto y adjuntos del correo nuevo.
+
+### Variables requeridas en `.env` del servidor:
+```env
+IMAP_HOST="imap.gmail.com"
+IMAP_PORT=993
+IMAP_ENCRYPTION=ssl
+IMAP_USER="martinpallante@gmail.com"
+IMAP_PASS="unyd iepu ohyx yruy"
+EMAIL_SENDER="ireneriv_1976@hotmail.com"
+```
+
+### Si el cron deja de funcionar:
+- Verificar que el job está **Activado** en EasyCron.
+- Comprobar que el `.env` del servidor tiene las variables IMAP.
+- Acceder directamente a la URL para ver el log de ejecución.
