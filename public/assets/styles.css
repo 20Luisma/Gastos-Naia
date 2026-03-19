@@ -1495,8 +1495,8 @@ body::before {
     grid-template-columns: 240px 1fr 280px;
     grid-template-rows: 1fr;
     gap: 0;
-    height: calc(100vh - 120px);
-    min-height: 600px;
+    height: calc(100vh - 90px);
+    min-height: 650px;
     background: var(--bg-primary);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -1784,18 +1784,19 @@ body::before {
 .gcal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(0, 1fr); /* Todas las filas miden exactamente lo mismo y ocupan el alto disponible */
     flex: 1;
-    overflow-y: auto;
+    overflow-y: hidden; /* No hay scroll interno, se ajusta a la pantalla */
 }
 
 .gcal-cell {
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    min-height: 90px;
     padding: 4px 6px;
     cursor: pointer;
     transition: background 0.12s;
     position: relative;
+    overflow: hidden; /* Evita que el contenido las estire */
 }
 
 .gcal-cell:nth-child(7n) {
