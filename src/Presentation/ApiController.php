@@ -536,13 +536,16 @@ class ApiController
                     curl_close($ch);
                     $this->jsonResponse(['success' => true]);
                     break;
-
                 case 'syncCorreos':
-                    $script = realpath(__DIR__ . '/../../cron_fetch_emails.php');
-                    if ($script) {
-                        shell_exec("php " . escapeshellarg($script) . " > /dev/null 2>&1");
+                    $config = require __DIR__ . '/../../config.php';
+                    $fetchEmails = new \GastosNaia\Application\FetchEmailsUseCase($config);
+                    $result = $fetchEmails->execute(false, false); // false para forceAll, false para isCli
+                    
+                    if ($result['success']) {
+                        $this->jsonResponse(['success' => true, 'message' => $result['message'], 'newCount' => $result['count'] ?? 0]);
+                    } else {
+                        $this->jsonResponse(['success' => false, 'message' => $result['message']], 500);
                     }
-                    $this->jsonResponse(['success' => true, 'message' => 'Sincronización forzada completada']);
                     break;
 
                 case 'scan_receipt':
