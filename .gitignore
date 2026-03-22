@@ -24,3 +24,6 @@ storage/*
 !storage/.gitkeep
 
 docs/google-oauth.md
+
+# Archivos JS antiguos o backups (no subir)
+public/assets/app.js
