@@ -99,11 +99,11 @@ ls /home/USER/domains/contenido.creawebes.com/public_html/GastosNaia/
 
 ---
 
-## 🔔 Cron Job de Recordatorios — EasyCron
+## 🔔 Cron Job de Recordatorios — Cron-job.org
 
-Los recordatorios de eventos se gestionan mediante un cron job externo en **EasyCron**.
+Los recordatorios de eventos se gestionan mediante un cron job externo en **Cron-job.org**.
 
-- **Web (Panel de Control)**: https://www.easycron.com/cron-jobs
+- **Web (Panel de Control)**: https://console.cron-job.org/jobs
 - **Cuenta**: martinpallante@gmail.com
 - **Nombre del job**: `Naia Reminders`
 - **URL que llama cada minuto**:
@@ -115,20 +115,20 @@ https://contenido.creawebes.com/GastosNaia/send_reminders.php?secret=naia_secret
 
 ### ¿Cómo funciona?
 1. Al crear un evento con alarma en la app → se guarda en `storage/reminders.json` en el servidor.
-2. EasyCron llama a la URL cada minuto.
+2. Cron-job.org llama a la URL cada minuto.
 3. El script comprueba si algún evento tiene que dispararse ahora → manda aviso por Telegram.
 
 ### Si el cron deja de funcionar:
-- Entrar en easycron.com y verificar que el job está **Activado**.
-- Comprobar el log de ejecuciones en EasyCron para ver si hay errores.
+- Entrar en console.cron-job.org y verificar que el job está **Activado**.
+- Comprobar el log de ejecuciones en Cron-job.org para ver si hay errores.
 
 ---
 
-## 📬 Cron Job de Correos — EasyCron
+## 📬 Cron Job de Correos — Cron-job.org
 
-La sincronización de correos de Irene se gestiona también en **EasyCron**.
+La sincronización de correos se gestiona también en **Cron-job.org**.
 
-- **Web (Panel de Control)**: https://www.easycron.com/cron-jobs
+- **Web (Panel de Control)**: https://console.cron-job.org/jobs
 - **Cuenta**: martinpallante@gmail.com
 - **Nombre del job**: `Naia Fetch Emails`
 - **URL que llama cada 10 minutos**:
@@ -139,7 +139,7 @@ https://contenido.creawebes.com/GastosNaia/cron_fetch_emails.php
 - **Zona horaria**: Europa/Madrid
 
 ### ¿Cómo funciona?
-1. EasyCron llama a la URL cada 10 minutos.
+1. Cron-job.org llama a la URL cada 10 minutos.
 2. El script conecta vía IMAP a Gmail y busca correos nuevos de `ireneriv_1976@hotmail.com`.
 3. Descarga adjuntos y los guarda en `public/archivos_correos/`.
 4. Guarda los datos del correo en Firebase bajo `/emails`.
@@ -156,6 +156,6 @@ EMAIL_SENDER="ireneriv_1976@hotmail.com"
 ```
 
 ### Si el cron deja de funcionar:
-- Verificar que el job está **Activado** en EasyCron.
+- Verificar que el job está **Activado** en Cron-job.org.
 - Comprobar que el `.env` del servidor tiene las variables IMAP.
 - Acceder directamente a la URL para ver el log de ejecución.

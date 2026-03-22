@@ -6,8 +6,8 @@
  *   - Cron CLI:  php /ruta/send_reminders.php (en public/)
  * 
  * URL pública: https://contenido.creawebes.com/GastosNaia/send_reminders.php?secret=naia_secret_2026
- * EasyCron llama a esta URL cada minuto.
- * URL del panel de EasyCron: https://www.easycron.com/cron-jobs
+ * Cron-job.org llama a esta URL cada minuto.
+ * URL del panel de Cron-job.org: https://console.cron-job.org/jobs
  */
 
 // Protección: si viene por HTTP, exigir el secret
@@ -50,7 +50,7 @@ foreach ($reminders as &$reminder) {
     // Disparar si la hora de aviso es "ahora" (dentro del minuto actual)
     $diffSeconds = $now->getTimestamp() - $fireAt->getTimestamp();
 
-    // Margen: entre 0 y 119 segundos de retraso (2 minutos para cubrir retrasos de EasyCron)
+    // Margen: entre 0 y 119 segundos de retraso (2 minutos para cubrir retrasos de Cron-job.org)
     if ($diffSeconds >= 0 && $diffSeconds < 120) {
         $title           = $reminder['title'] ?? 'Evento';
         $reminderMinutes = $reminder['reminderMinutes'] ?? '';
