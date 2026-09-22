@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "252109901064",
+    "firebase_url": "https://gastos-naia-c3cb8-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "gastos-naia-c3cb8",
+    "storage_bucket": "gastos-naia-c3cb8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252109901064:android:419ec36c08026a2ea230bd",
+        "android_client_info": {
+          "package_name": "com.luisma.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0TywIHY0Qrw5vJM45Cicuz-bJm7njDkc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

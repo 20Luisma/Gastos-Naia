@@ -1,0 +1,73 @@
+name: gastos_naia
+description: "Gastos Naia - Control de gastos familiares"
+version: 1.0.19+19
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  fl_chart: ^0.69.0
+  intl: ^0.20.2
+
+  # Google Sheets API
+  googleapis: ^16.0.0
+  googleapis_auth: ^2.0.0
+  http: ^1.2.2
+
+  # Firebase
+  firebase_core: ^3.9.0
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.5.4
+  firebase_messaging: ^15.1.4
+
+  # Notificaciones locales (para cuando la app está en primer plano)
+  flutter_local_notifications: ^18.0.1
+
+  # Cámara y OCR (para escanear recibos)
+  image_picker: ^1.1.2
+
+  # Gemini AI
+  # (Replaced by OpenAI — uses http package directly)
+
+  # Almacenamiento local y seguridad
+  shared_preferences: ^2.3.3
+  flutter_secure_storage: ^9.2.2
+
+  # Utilidades
+  provider: ^6.1.2
+  envied: ^0.5.4+1
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.1
+  file_picker: ^10.3.10
+  http_parser: ^4.1.2
+  table_calendar: ^3.2.0
+  flutter_linkify: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  envied_generator: ^0.5.4+1
+  build_runner: ^2.4.13
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/app_icon.png"
+  adaptive_icon_background: "#1B1B3F"
+  adaptive_icon_foreground: "assets/app_icon.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
