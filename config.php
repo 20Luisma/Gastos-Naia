@@ -79,6 +79,7 @@ return [
         2024 => '1Cqfq7MSUvNH55dhgYWWbZfhcmr51rI7BbGodlOH_i74',
         2025 => '1otkT6ikYD0sMUMOngMD3TrNmxoenMoOOg-YcQaXJM-M',
         2026 => '1J_Y63fBRbN25W3EvRGzSO2skKwa5vgJPbZSAU7NUngU',
+        2027 => '1BwCpfTzNFtEgzKusdf6sKYaQ8Lqr16T0IV16FkytD34',
     ],
 
     // ── Uploads locales (Legacy) ──
@@ -95,6 +96,7 @@ return [
         2024 => '131jsC1IWbTLR2c3uVlQLYISDr9hEwzqo',
         2025 => '1gmfqyoQr7Fx-J1Rz76Lo0NGq_qTHt9Uj',
         2026 => '1CNY-mYwrG1HCgwSQde_P8sOVt6nWum6e',
+        2027 => '1Jcl1uQQQ4KIQmJhtANFLWVRX6khgxysg',
     ],
     // ── Telegram Notifications ──
     'telegram_token' => '8523595347:AAGc_KWuZjWO3ziJML-Jp9So5B5UMCqKr3U',
